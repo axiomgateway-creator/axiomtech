@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block title %}{{ service.name }} | Axiom Gateway Consult{% endblock %}
+{% block content %}
+<section class="relative bg-slate-900 text-white py-20 lg:py-28 overflow-hidden">
+  <div class="absolute inset-0 z-0 opacity-20 bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1920&q=80');"></div>
+  <div class="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-900/95 to-slate-900/80 z-0"></div>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <div class="max-w-3xl space-y-4">
+      <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs sm:text-sm font-semibold tracking-wide uppercase">
+        <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+        Service Focus
+      </div>
+      <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight">{{ service.name }}</h1>
+      <p class="text-slate-300 text-lg sm:text-xl font-normal leading-relaxed">{{ service.short_description }}</p>
+    </div>
+  </div>
+</section>
+
+<section class="py-20 bg-white">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <div class="lg:col-span-7 space-y-6">
+        <div class="p-8 rounded-2xl bg-slate-50 border border-slate-200 shadow-sm">
+          <p class="text-slate-600 leading-relaxed text-base sm:text-lg">{{ service.full_description }}</p>
+        </div>
+
+        <div class="p-8 rounded-2xl bg-white border border-slate-200 shadow-sm">
+          <h2 class="text-2xl font-bold text-slate-900 mb-5">What this service includes</h2>
+          <ul class="space-y-3 text-slate-700">
+            {% if service.slug == 'digital-solutions-it' %}
+              <li class="flex items-start gap-3"><i class="fa-solid fa-circle-check text-blue-600 mt-1"></i><span>Website design and development</span></li>
+              <li class="flex items-start gap-3"><i class="fa-solid fa-circle-check text-blue-600 mt-1"></i><span>WordPress website development</span></li>
+              <li class="flex items-start gap-3"><i class="fa-solid fa-circle-check text-blue-600 mt-1"></i><span>Business portals and web applications</span></li>
+              <li class="flex items-start gap-3"><i class="fa-solid fa-circle-check text-blue-600 mt-1"></i><span>Database design, cloud support and technology consulting</span></li>
+            {% elif service.slug == 'human-resource-organizational-development' %}
+              <li class="flex items-start gap-3"><i class="fa-solid fa-circle-check text-blue-600 mt-1"></i><span>Human resource and organizational consulting</span></li>
+              <li class="flex items-start gap-3"><i class="fa-solid fa-circle-check text-blue-600 mt-1"></i><span>Training needs assessment and capacity development</span></li>
+              <li class="flex items-start gap-3"><i class="fa-solid fa-circle-check text-blue-600 mt-1"></i><span>Performance management and team effectiveness support</span></li>
+              <li class="flex items-start gap-3"><i class="fa-solid fa-circle-check text-blue-600 mt-1"></i><span>Learning strategy and workplace strengthening</span></li>
+            {% elif service.slug == 'business-management-consulting' %}
+              <li class="flex items-start gap-3"><i class="fa-solid fa-circle-check text-blue-600 mt-1"></i><span>Business strategy and growth planning</span></li>
+              <li class="flex items-start gap-3"><i class="fa-solid fa-circle-check text-blue-600 mt-1"></i><span>Project management and operational advisory</span></li>
+              <li class="flex items-start gap-3"><i class="fa-solid fa-circle-check text-blue-600 mt-1"></i><span>Process improvement and management consulting</span></li>
+              <li class="flex items-start gap-3"><i class="fa-solid fa-circle-check text-blue-600 mt-1"></i><span>Monitoring, evaluation and decision support</span></li>
+            {% elif service.slug == 'digital-marketing-creative' %}
+              <li class="flex items-start gap-3"><i class="fa-solid fa-circle-check text-blue-600 mt-1"></i><span>Digital marketing strategy and campaign support</span></li>
+              <li class="flex items-start gap-3"><i class="fa-solid fa-circle-check text-blue-600 mt-1"></i><span>Brand development, creative design and content</span></li>
+              <li class="flex items-start gap-3"><i class="fa-solid fa-circle-check text-blue-600 mt-1"></i><span>Social media, SEO and customer engagement support</span></li>
+              <li class="flex items-start gap-3"><i class="fa-solid fa-circle-check text-blue-600 mt-1"></i><span>Visual communication that strengthens your market presence</span></li>
+            {% else %}
+              <li class="flex items-start gap-3"><i class="fa-solid fa-circle-check text-blue-600 mt-1"></i><span>Data collection, cleaning and analytics</span></li>
+              <li class="flex items-start gap-3"><i class="fa-solid fa-circle-check text-blue-600 mt-1"></i><span>Dashboard reporting and business intelligence</span></li>
+              <li class="flex items-start gap-3"><i class="fa-solid fa-circle-check text-blue-600 mt-1"></i><span>Actionable insights for better decision-making</span></li>
+              <li class="flex items-start gap-3"><i class="fa-solid fa-circle-check text-blue-600 mt-1"></i><span>Performance tracking and strategic support</span></li>
+            {% endif %}
+          </ul>
+        </div>
+      </div>
+
+      <aside class="lg:col-span-5 space-y-6">
+        <div class="p-8 rounded-2xl bg-slate-900 text-white shadow-xl">
+          <h2 class="text-2xl font-bold mb-5">This service supports</h2>
+          <ul class="space-y-3 text-slate-200">
+            <li class="flex items-start gap-3"><i class="fa-solid fa-arrow-right text-blue-400 mt-1"></i><span>Organizations seeking practical and measurable business improvement.</span></li>
+            <li class="flex items-start gap-3"><i class="fa-solid fa-arrow-right text-blue-400 mt-1"></i><span>Leaders looking for stronger systems and more reliable decisions.</span></li>
+            <li class="flex items-start gap-3"><i class="fa-solid fa-arrow-right text-blue-400 mt-1"></i><span>Teams that need digital modernization, productivity, or capacity development.</span></li>
+            <li class="flex items-start gap-3"><i class="fa-solid fa-arrow-right text-blue-400 mt-1"></i><span>Businesses that want clearer strategy and stronger implementation.</span></li>
+          </ul>
+        </div>
+
+        <div class="p-8 rounded-2xl bg-slate-50 border border-slate-200 shadow-sm">
+          <h3 class="text-xl font-bold text-slate-900 mb-5">Ready to discuss this?</h3>
+          <a href="{{ url_for('public.contact') }}?service={{ service.slug }}" class="inline-flex items-center justify-center w-full gap-2 px-6 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-all shadow-md shadow-blue-600/20">
+            Request this service <i class="fa-solid fa-arrow-right"></i>
+          </a>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+{% endblock %}

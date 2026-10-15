@@ -1,0 +1,31 @@
+{% extends 'student/base.html' %}
+
+{% block title %}Certificate Verification{% endblock %}
+
+{% block content %}
+<section class="py-16 bg-slate-50">
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+      <h1 class="text-3xl font-extrabold text-slate-900">Verify a certificate</h1>
+      <form method="post" class="mt-6 space-y-4">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="text" name="code" placeholder="Enter certificate code" class="w-full rounded-xl border border-slate-300 px-4 py-3 focus:border-blue-500 focus:outline-none" required />
+        <button type="submit" class="rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-500">Check certificate</button>
+      </form>
+
+      {% if result %}
+      <div class="mt-8 rounded-xl border {% if result == 'valid' %}border-emerald-200 bg-emerald-50{% else %}border-rose-200 bg-rose-50{% endif %} p-5">
+        {% if result == 'valid' and cert %}
+          <p class="text-lg font-bold text-emerald-700">Certificate is valid</p>
+          <p class="mt-2 text-slate-700">Student: {{ cert.student.full_name }}</p>
+          <p class="text-slate-700">Course: {{ cert.course.title }}</p>
+          <p class="text-slate-700">Issued: {{ cert.issue_date.strftime('%d %b %Y') if cert.issue_date else 'N/A' }}</p>
+        {% else %}
+          <p class="text-lg font-bold text-rose-700">Certificate not found or invalid.</p>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

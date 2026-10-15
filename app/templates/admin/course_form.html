@@ -1,0 +1,29 @@
+{% extends 'admin/layout.html' %}
+{% block title %}{% if course %}Edit course{% else %}Create course{% endif %}{% endblock %}
+{% block content %}
+<h1>{% if course %}Edit course{% else %}Create course{% endif %}</h1>
+<form method="post" class="admin-form">
+  {{ form.hidden_tag() }}
+  <div class="form-grid admin-grid">
+    <div><label>Course title</label>{{ form.title() }}{% for error in form.title.errors %}<small>{{ error }}</small>{% endfor %}</div>
+    <div><label>URL slug</label>{{ form.slug() }}{% for error in form.slug.errors %}<small>{{ error }}</small>{% endfor %}</div>
+    <div class="full-width"><label>Short description</label>{{ form.short_description(rows=3) }}</div>
+    <div class="full-width"><label>Course description (HTML supported)</label>{{ form.description(rows=8) }}</div>
+    <div><label>Category</label>{{ form.category_id() }}</div>
+    <div><label>Instructor</label>{{ form.instructor_name() }}</div>
+    <div><label>Difficulty</label>{{ form.difficulty() }}</div>
+    <div><label>Duration in hours</label>{{ form.duration_hours(min=1) }}</div>
+    <div><label>Language</label>{{ form.language() }}</div>
+    <div><label>Price</label>{{ form.price(type='number', min='0', step='0.01') }}</div>
+    <div><label>Currency</label>{{ form.currency() }}</div>
+    <div><label>Status</label>{{ form.status() }}</div>
+    <div class="full-width"><label>Learning objectives</label>{{ form.objectives(rows=4) }}</div>
+    <div class="full-width"><label>Prerequisites</label>{{ form.prerequisites(rows=3) }}</div>
+    <div><label>{{ form.is_free() }} Free course</label></div>
+    <div><label>{{ form.is_featured() }} Featured course</label></div>
+    <div><label>{{ form.certificate_eligible() }} Certificate eligible</label></div>
+  </div>
+  <button class="btn btn-primary" type="submit">Save course</button>
+  {% if course %}<a class="btn" href="{{ url_for('admin.lesson_new', course_id=course.id) }}">Add lesson</a><a class="btn" href="{{ url_for('admin.quiz_new', course_id=course.id) }}">Add assessment</a>{% endif %}
+</form>
+{% endblock %}

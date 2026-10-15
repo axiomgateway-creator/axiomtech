@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+
+{% block title %}Axiom Academy Courses{% endblock %}
+
+{% block content %}
+<section class="min-h-screen bg-slate-50/50 py-12 lg:py-16">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    
+    <!-- Header Section -->
+    <div class="mb-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+      <div>
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold uppercase tracking-wider mb-3">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0112 20.055a11.952 11.952 0 01-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
+          Academy Catalogue
+        </div>
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">Explore Courses</h1>
+        <p class="mt-2 text-slate-600 max-w-xl text-sm sm:text-base">Enhance your skills with expert-led courses designed for real-world impact.</p>
+      </div>
+
+      <!-- Search & Filter Controls -->
+      <form method="get" class="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
+        <!-- Search Input -->
+        <div class="relative w-full sm:w-64">
+          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          </div>
+          <input type="text" name="q" value="{{ q or '' }}" placeholder="Search courses..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition shadow-sm" />
+        </div>
+
+        <!-- Category Dropdown -->
+        <div class="relative w-full sm:w-52">
+          <select name="category" class="w-full appearance-none bg-white border border-slate-200 rounded-xl pl-4 pr-10 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition shadow-sm cursor-pointer">
+            <option value="">All Categories</option>
+            {% for category in categories %}
+            <option value="{{ category.id }}" {% if category.id|string == category_id|string %}selected{% endif %}>{{ category.name }}</option>
+            {% endfor %}
+          </select>
+          <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-xl transition-all shadow-sm shadow-blue-500/20 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+          Filter
+        </button>
+      </form>
+    </div>
+
+    <!-- Course Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {% for course in courses.items %}
+      <article class="group relative flex flex-col bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden">
+        
+        <!-- Thumbnail Container -->
+        <div class="relative aspect-video w-full bg-slate-100 overflow-hidden">
+          {% if course.image_url %}
+            <img src="{{ course.image_url }}" alt="{{ course.title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          {% else %}
+            <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 text-slate-400">
+              <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+            </div>
+          {% endif %}
+
+          <!-- Category Badge -->
+          <span class="absolute top-3 left-3 px-2.5 py-1 rounded-lg bg-slate-900/80 backdrop-blur-md text-white text-xs font-semibold tracking-wide">
+            {{ course.category.name if course.category else 'General' }}
+          </span>
+
+          <!-- Difficulty Badge -->
+          {% if course.difficulty %}
+          <span class="absolute top-3 right-3 px-2.5 py-1 rounded-lg bg-white/90 backdrop-blur-md text-slate-700 text-xs font-medium border border-slate-200/50 capitalize shadow-sm">
+            {{ course.difficulty }}
+          </span>
+          {% endif %}
+        </div>
+
+        <!-- Card Body -->
+        <div class="flex-1 flex flex-col p-6">
+          <h2 class="text-xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2">
+            <a href="{{ url_for('public.academy_course_detail', slug=course.slug) }}">
+              {{ course.title }}
+            </a>
+          </h2>
+
+          <p class="mt-2.5 text-sm text-slate-600 line-clamp-2 leading-relaxed flex-1">
+            {{ course.short_description }}
+          </p>
+
+          <!-- Course Meta Specs -->
+          <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-medium text-slate-500">
+            <div class="flex items-center gap-1.5">
+              <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <span>{{ course.duration_hours }} hrs</span>
+            </div>
+
+            <!-- Price Tag -->
+            <div class="text-right">
+              {% if course.is_free %}
+                <span class="text-sm font-bold text-emerald-600 uppercase tracking-wider">Free</span>
+              {% else %}
+                <span class="text-base font-bold text-slate-900">{{ course.currency }} {{ '%.2f'|format(course.price) }}</span>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Action Button -->
+          <a href="{{ url_for('public.academy_course_detail', slug=course.slug) }}" class="mt-4 w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-50 hover:bg-blue-50 text-slate-700 hover:text-blue-600 text-sm font-semibold border border-slate-200/60 hover:border-blue-200 transition-all duration-200">
+            Explore Course
+            <svg class="w-4 h-4 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+          </a>
+        </div>
+      </article>
+      {% else %}
+
+      <!-- Empty State -->
+      <div class="col-span-full rounded-2xl border-2 border-dashed border-slate-200 bg-white p-12 text-center max-w-lg mx-auto my-8">
+        <div class="mx-auto w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-4">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        </div>
+        <h3 class="text-lg font-bold text-slate-900">No courses found</h3>
+        <p class="mt-1 text-sm text-slate-500">We couldn't find any courses matching your search criteria. Try adjusting your filters.</p>
+        <a href="{{ url_for('public.academy_courses') }}" class="mt-5 inline-flex items-center px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-xl transition">
+          Clear Filters
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if courses.pages > 1 %}
+    <div class="mt-12 flex items-center justify-center gap-2">
+      <!-- Previous Button -->
+      {% if courses.has_prev %}
+        <a href="{{ url_for('public.academy_courses', page=courses.prev_num, q=q, category=category_id) }}" class="p-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition shadow-sm" aria-label="Previous page">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        </a>
+      {% endif %}
+
+      <!-- Page Numbers -->
+      {% for page_num in courses.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+        {% if page_num %}
+          {% if page_num == courses.page %}
+            <span class="w-10 h-10 inline-flex items-center justify-center rounded-xl bg-blue-600 text-white font-semibold text-sm shadow-sm shadow-blue-500/20">
+              {{ page_num }}
+            </span>
+          {% else %}
+            <a href="{{ url_for('public.academy_courses', page=page_num, q=q, category=category_id) }}" class="w-10 h-10 inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 font-medium text-sm transition shadow-sm">
+              {{ page_num }}
+            </a>
+          {% endif %}
+        {% else %}
+          <span class="px-2 text-slate-400">…</span>
+        {% endif %}
+      {% endfor %}
+
+      <!-- Next Button -->
+      {% if courses.has_next %}
+        <a href="{{ url_for('public.academy_courses', page=courses.next_num, q=q, category=category_id) }}" class="p-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition shadow-sm" aria-label="Next page">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </a>
+      {% endif %}
+    </div>
+    {% endif %}
+
+  </div>
+</section>
+{% endblock %}

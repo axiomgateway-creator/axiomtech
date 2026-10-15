@@ -1,0 +1,21 @@
+{% extends 'admin/layout.html' %}
+{% block title %}Add lesson{% endblock %}
+{% block content %}
+<h1>Add lesson</h1>
+<p>Course: {{ course.title }}</p>
+<form method="post" class="admin-form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="form-grid admin-grid">
+    <div><label>Lesson title</label><input name="title" maxlength="200" required></div>
+    <div><label>URL slug (optional)</label><input name="slug" maxlength="200"></div>
+    <div><label>Lesson type</label><select name="lesson_type"><option value="text">Text</option><option value="video">Video</option></select></div>
+    <div><label>Duration in minutes</label><input name="duration_minutes" type="number" min="1" max="1440" value="15" required></div>
+    <div><label>Order</label><input name="order_index" type="number" min="0" value="0" required></div>
+    <div><label>Video URL (optional)</label><input name="external_video_url" type="url"></div>
+    <div class="full-width"><label>Lesson content</label><textarea name="content" rows="10" required></textarea></div>
+    <div><label><input type="checkbox" name="is_preview"> Public preview</label></div>
+    <div><label><input type="checkbox" name="publish" checked> Publish lesson</label></div>
+  </div>
+  <button class="btn btn-primary" type="submit">Save lesson</button>
+</form>
+{% endblock %}

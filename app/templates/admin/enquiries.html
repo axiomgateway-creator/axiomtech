@@ -1,0 +1,25 @@
+{% extends 'admin/layout.html' %}
+{% block title %}Enquiries{% endblock %}
+{% block content %}
+<h1>Enquiries</h1>
+<form class="filter-bar admin-filter" method="get">
+  <input type="text" name="q" value="{{ q }}" placeholder="Search name or email">
+  <select name="status">
+    <option value="">Any status</option>
+    <option value="New" {% if status == 'New' %}selected{% endif %}>New</option>
+    <option value="In Progress" {% if status == 'In Progress' %}selected{% endif %}>In Progress</option>
+    <option value="Responded" {% if status == 'Responded' %}selected{% endif %}>Responded</option>
+    <option value="Converted" {% if status == 'Converted' %}selected{% endif %}>Converted</option>
+    <option value="Closed" {% if status == 'Closed' %}selected{% endif %}>Closed</option>
+  </select>
+  <button class="btn btn-primary" type="submit">Filter</button>
+</form>
+<table>
+  <thead><tr><th>Ref</th><th>Name</th><th>Email</th><th>Service</th><th>Status</th><th>Date</th></tr></thead>
+  <tbody>
+    {% for enquiry in enquiries %}
+    <tr><td><a href="{{ url_for('admin.enquiry_detail', id=enquiry.id) }}">{{ enquiry.reference }}</a></td><td>{{ enquiry.full_name }}</td><td>{{ enquiry.email }}</td><td>{{ enquiry.service.name if enquiry.service else enquiry.enquiry_type }}</td><td>{{ enquiry.status }}</td><td>{{ enquiry.created_at.strftime('%d %b %Y') }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

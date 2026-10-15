@@ -1,0 +1,21 @@
+{% extends 'admin/layout.html' %}
+{% block title %}Article form{% endblock %}
+{% block content %}
+<h1>{% if article %}Edit{% else %}New{% endif %} article</h1>
+<form method="post" class="admin-form">
+  {{ form.hidden_tag() }}
+  <div class="form-grid admin-grid">
+    <div><label>Title</label>{{ form.title() }}</div>
+    <div><label>Slug</label>{{ form.slug() }}</div>
+    <div class="full-width"><label>Excerpt</label>{{ form.excerpt() }}</div>
+    <div class="full-width"><label>Body</label>{{ form.body() }}</div>
+    <div><label>Category</label>{{ form.category_id() }}</div>
+    <div><label>Author</label>{{ form.author_name() }}</div>
+    <div><label>SEO title</label>{{ form.seo_title() }}</div>
+    <div><label>Cover image</label>{{ form.cover_image() }}</div>
+    <div class="full-width"><label>SEO description</label>{{ form.seo_description() }}</div>
+    <div><label>Status</label>{{ form.status() }}</div>
+  </div>
+  <button class="btn btn-primary" type="submit">Save</button>
+</form>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends 'admin/layout.html' %}
+{% block title %}Categories{% endblock %}
+{% block content %}
+<h1>Article categories</h1>
+<form method="post" class="inline-form">
+  <input type="text" name="name" placeholder="New category name">
+  <textarea name="description" placeholder="Description"></textarea>
+  <button class="btn btn-primary" type="submit">Add category</button>
+</form>
+<table>
+  <thead><tr><th>Name</th><th>Slug</th><th>Description</th></tr></thead>
+  <tbody>
+    {% for category in categories %}
+    <tr><td>{{ category.name }}</td><td>{{ category.slug }}</td><td>{{ category.description or '' }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

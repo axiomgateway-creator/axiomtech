@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}Terms of Use | Axiom Gateway Consult{% endblock %}
+{% block content %}
+<section class="relative bg-slate-900 text-white py-20 lg:py-28 overflow-hidden">
+  <div class="absolute inset-0 z-0 opacity-20 bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1920&q=80');"></div>
+  <div class="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-900/95 to-slate-900/80 z-0"></div>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <div class="max-w-3xl space-y-4">
+      <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs sm:text-sm font-semibold tracking-wide uppercase">
+        <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+        Legal
+      </div>
+      <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight">Terms of Use</h1>
+    </div>
+  </div>
+</section>
+
+<section class="py-20 bg-white">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="rounded-3xl border border-slate-200 bg-slate-50 p-6 sm:p-8 lg:p-10 shadow-sm space-y-6 text-slate-700">
+      <p>These terms govern use of the Axiom Gateway Consult website. This policy is provided for company review and should be confirmed by legal counsel before being treated as final legal advice.</p>
+      <div>
+        <h2 class="text-2xl font-bold text-slate-900 mb-3">Website use</h2>
+        <p>Visitors may use the website for legitimate informational, business, and contact purposes. You agree not to misuse the website, attempt to interfere with availability, or submit harmful content.</p>
+      </div>
+      <div>
+        <h2 class="text-2xl font-bold text-slate-900 mb-3">Intellectual property</h2>
+        <p>Branding, content, design elements, and materials on the website remain the property of Axiom Gateway Consult unless otherwise stated.</p>
+      </div>
+      <div>
+        <h2 class="text-2xl font-bold text-slate-900 mb-3">Submitted information</h2>
+        <p>Any enquiries or messages submitted through the website are treated as business communication and may be stored to support follow-up and service delivery.</p>
+      </div>
+      <div>
+        <h2 class="text-2xl font-bold text-slate-900 mb-3">External links</h2>
+        <p>We may link to external websites for convenience. We do not accept responsibility for third-party platforms or their content.</p>
+      </div>
+      <div>
+        <h2 class="text-2xl font-bold text-slate-900 mb-3">Contact</h2>
+        <p>For website or legal enquiries, contact <a href="mailto:{{ company_settings.contact_email }}" class="text-blue-600 hover:underline">{{ company_settings.contact_email }}</a>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

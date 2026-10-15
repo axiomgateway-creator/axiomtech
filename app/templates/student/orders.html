@@ -1,0 +1,42 @@
+{% extends 'student/base.html' %}
+
+{% block title %}Orders | Axiom Academy{% endblock %}
+
+{% block content %}
+<section class="space-y-6">
+  <header>
+    <p class="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">Account</p>
+    <h1 class="mt-2 text-3xl font-extrabold text-slate-900">Orders</h1>
+    <p class="mt-2 text-sm text-slate-600">Payment and purchase history for your account.</p>
+  </header>
+
+  {% if orders %}
+  <div class="overflow-x-auto border border-slate-200 bg-white">
+    <table class="w-full min-w-[640px] border-collapse text-left text-sm">
+      <caption class="sr-only">Your academy orders</caption>
+      <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+        <tr><th scope="col" class="px-5 py-3 font-semibold">Order</th><th scope="col" class="px-5 py-3 font-semibold">Item</th><th scope="col" class="px-5 py-3 font-semibold">Date</th><th scope="col" class="px-5 py-3 font-semibold">Amount</th><th scope="col" class="px-5 py-3 font-semibold">Status</th></tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for order in orders %}
+        <tr>
+          <td class="px-5 py-4 font-semibold text-slate-900">{{ order.reference }}</td>
+          <td class="px-5 py-4 text-slate-700">{% if order.item_type == 'course' %}{{ order_courses.get(order.item_id).title if order_courses.get(order.item_id) else 'Course purchase' }}{% elif order.item_type == 'product' and order.product %}{{ order.product.title }}{% else %}{{ order.item_type|title }}{% endif %}</td>
+          <td class="whitespace-nowrap px-5 py-4 text-slate-600">{{ order.created_at.strftime('%d %b %Y') if order.created_at else '—' }}</td>
+          <td class="whitespace-nowrap px-5 py-4 font-medium text-slate-900">{{ order.currency }} {{ '%.2f'|format(order.amount) }}</td>
+          <td class="px-5 py-4"><span class="inline-flex rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wide {% if order.status == 'paid' %}bg-emerald-50 text-emerald-800{% elif order.status == 'pending' %}bg-amber-50 text-amber-800{% else %}bg-slate-100 text-slate-700{% endif %}">{{ order.status }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
+    <i class="fa-solid fa-receipt text-2xl text-slate-400" aria-hidden="true"></i>
+    <h2 class="mt-4 text-lg font-bold text-slate-900">No orders yet</h2>
+    <p class="mt-2 text-sm text-slate-600">Course and resource purchases will appear here.</p>
+    <a href="{{ url_for('public.academy_courses') }}" class="mt-5 inline-flex items-center gap-2 font-semibold text-blue-700 hover:text-blue-900 focus:outline-none focus:underline">Browse courses <span aria-hidden="true">&rarr;</span></a>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

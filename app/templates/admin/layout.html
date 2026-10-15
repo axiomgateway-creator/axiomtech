@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Admin{% endblock %} | Axiom Admin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://kit.fontawesome.com/a076d7f4d2.js" crossorigin="anonymous"></script>
+  </head>
+  <body class="admin-body">
+    <div class="admin-shell">
+      <aside class="admin-sidebar">
+        <div class="brand-box">
+          <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="Axiom logo">
+        </div>
+        <nav class="admin-nav">
+          <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+          <a href="{{ url_for('admin.enquiries') }}">Enquiries</a>
+          <a href="{{ url_for('admin.articles') }}">Articles</a>
+          <a href="{{ url_for('admin.categories') }}">Categories</a>
+          <a href="{{ url_for('admin.projects_admin') }}">Projects</a>
+          <a href="{{ url_for('admin.courses_admin') }}">Academy courses</a>
+          <a href="{{ url_for('admin.course_payments') }}">Course payment receipts</a>
+          <a href="{{ url_for('admin.products_admin') }}">Academy resources</a>
+          <a href="{{ url_for('admin.settings') }}">Company settings</a>
+          <a href="{{ url_for('admin.admin_logout') }}">Logout</a>
+        </nav>
+      </aside>
+      <main class="admin-main">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-stack">
+              {% for category, message in messages %}
+                <div class="flash flash-{{ category }}">{{ message }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </body>
+</html>

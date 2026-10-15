@@ -1,0 +1,46 @@
+{% extends 'admin/layout.html' %}
+{% block title %}Add assessment{% endblock %}
+{% block content %}
+<h1>Add assessment</h1>
+<p>Course: {{ course.title }}</p>
+<form method="post" class="admin-form" id="quiz-form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="form-grid admin-grid">
+    <div><label>Assessment title</label><input name="title" maxlength="200" required></div>
+    <div><label>Pass mark (%)</label><input name="pass_mark" type="number" min="0" max="100" value="70"></div>
+    <div><label>Attempt limit</label><input name="attempt_limit" type="number" min="1" max="20" value="3"></div>
+    <div class="full-width"><label>Instructions</label><textarea name="instructions" rows="3"></textarea></div>
+  </div>
+  <div id="question-list" class="space-y-5"></div>
+  <button type="button" class="btn" id="add-question">Add question</button>
+  <button class="btn btn-primary" type="submit" name="publish" value="1">Publish assessment</button>
+</form>
+<template id="question-template">
+  <fieldset class="admin-form" style="margin-top: 1rem">
+    <legend>Question <span class="question-number"></span></legend>
+    <label>Prompt</label><textarea class="question-prompt" rows="3" required></textarea>
+    <div class="form-grid admin-grid">
+      <div><label>Option A</label><input class="option-a" required></div>
+      <div><label>Option B</label><input class="option-b" required></div>
+      <div><label>Option C</label><input class="option-c"></div>
+      <div><label>Option D</label><input class="option-d"></div>
+      <div><label>Correct option</label><select class="correct-option"><option value="a">A</option><option value="b">B</option><option value="c">C</option><option value="d">D</option></select></div>
+    </div>
+  </fieldset>
+</template>
+<script>
+  const questionList = document.getElementById('question-list');
+  const questionTemplate = document.getElementById('question-template');
+  document.getElementById('add-question').addEventListener('click', () => {
+    const index = questionList.children.length + 1;
+    if (index > 20) return;
+    const fragment = questionTemplate.content.cloneNode(true);
+    fragment.querySelector('.question-number').textContent = index;
+    fragment.querySelector('.question-prompt').name = `prompt_${index}`;
+    for (const letter of ['a', 'b', 'c', 'd']) fragment.querySelector(`.option-${letter}`).name = `option_${index}_${letter}`;
+    fragment.querySelector('.correct-option').name = `correct_${index}`;
+    questionList.append(fragment);
+  });
+  document.getElementById('add-question').click();
+</script>
+{% endblock %}

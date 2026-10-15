@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}Page not found | Axiom Gateway Consult{% endblock %}
+{% block content %}
+<section class="py-24 bg-white">
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+    <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs sm:text-sm font-semibold tracking-wide uppercase">
+      <span class="w-2 h-2 rounded-full bg-blue-600"></span>
+      Error 404
+    </div>
+    <h1 class="mt-6 text-4xl sm:text-5xl font-extrabold text-slate-900">Page not found</h1>
+    <p class="mt-4 text-lg text-slate-600">The page you requested could not be found. You can return to the homepage or contact our team for assistance.</p>
+    <a href="{{ url_for('public.home') }}" class="mt-8 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-all shadow-md shadow-blue-600/20">
+      Back to homepage <i class="fa-solid fa-arrow-right"></i>
+    </a>
+  </div>
+</section>
+{% endblock %}

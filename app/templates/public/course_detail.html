@@ -1,0 +1,95 @@
+{% extends 'student/base.html' %}
+
+{% block title %}{{ course.title }} | Axiom Academy{% endblock %}
+
+{% block content %}
+<section class="bg-slate-950 py-16 text-white">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+      <div class="lg:col-span-8">
+        <p class="text-sm font-semibold uppercase tracking-[0.2em] text-blue-300">{{ course.category.name if course.category else 'Academy course' }}</p>
+        <h1 class="mt-3 text-4xl font-extrabold">{{ course.title }}</h1>
+        <p class="mt-4 max-w-2xl text-lg text-slate-300">{{ course.short_description }}</p>
+        <div class="mt-6 flex flex-wrap gap-3 text-sm text-slate-200">
+          <span class="rounded-full border border-slate-700 bg-slate-800 px-3 py-1">{{ course.difficulty }}</span>
+          <span class="rounded-full border border-slate-700 bg-slate-800 px-3 py-1">{{ course.duration_hours }} hours</span>
+          <span class="rounded-full border border-slate-700 bg-slate-800 px-3 py-1">{{ course.language }}</span>
+          <span class="rounded-full border border-slate-700 bg-slate-800 px-3 py-1">{{ course.currency }} {{ '%.2f'|format(course.price if not course.is_free else 0) }}</span>
+        </div>
+      </div>
+      <div class="lg:col-span-4">
+        <div class="rounded-2xl border border-slate-700 bg-slate-900/90 p-6 shadow-xl">
+          <p class="text-sm uppercase tracking-wide text-blue-300">Course overview</p>
+          <h3 class="mt-4 text-3xl font-bold text-white">{% if course.is_free %}Free{% else %}{{ course.currency }} {{ '%.2f'|format(course.price) }}{% endif %}</h3>
+          <div class="mt-6 space-y-3 text-sm text-slate-300">
+            <p>Instructor: {{ course.instructor_name }}</p>
+            <p>Certificate eligible: {% if course.certificate_eligible %}Yes{% else %}No{% endif %}</p>
+            <p>Access: {% if enrolled %}Available to you{% else %}Open enrolment{% endif %}</p>
+          </div>
+          {% if current_user.is_authenticated and current_user.__class__.__name__ == 'Student' %}
+            {% if enrolled %}
+              <a href="{{ url_for('student.student_course_detail', slug=course.slug) }}" class="mt-6 inline-flex w-full justify-center rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-500">Continue learning</a>
+            {% elif payment_order and payment_order.status == 'receipt_submitted' %}
+              <div class="mt-6 rounded-xl border border-amber-300 bg-amber-50 p-4 text-center text-sm font-medium text-amber-900">Receipt submitted — course access opens after admin approval.</div>
+            {% elif payment_order and payment_order.status == 'rejected' %}
+              <a href="{{ url_for('student.submit_course_receipt', order_id=payment_order.id) }}" class="mt-6 inline-flex w-full justify-center rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-500">Resubmit receipt</a>
+            {% else %}
+              <form method="post" action="{{ url_for('student.checkout_course', course_id=course.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="mt-6 inline-flex w-full justify-center rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-500">Pay by bank transfer &amp; submit receipt</button>
+              </form>
+              <p class="mt-3 text-center text-xs text-slate-500">Course access is granted only after receipt approval.</p>
+            {% endif %}
+          {% else %}
+            <a href="{{ url_for('student.student_login') }}" class="mt-6 inline-flex w-full justify-center rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-500">Login to enroll</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="py-16 bg-white">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+      <div>
+        <h2 class="text-2xl font-bold text-slate-900">Course description</h2>
+        <div class="mt-4 prose prose-slate max-w-none">{{ course.description|safe }}</div>
+      </div>
+      <div class="space-y-8">
+        <div>
+          <h3 class="text-xl font-bold text-slate-900">Learning objectives</h3>
+          <ul class="mt-4 space-y-2 text-slate-600">
+            {% if course.objectives %}
+              {% for item in course.objectives.split('\n') if item.strip() %}
+              <li class="flex gap-3"><span class="mt-1 text-blue-600">•</span><span>{{ item.strip() }}</span></li>
+              {% endfor %}
+            {% else %}
+              <li>Build practical understanding for the course topic.</li>
+            {% endif %}
+          </ul>
+        </div>
+        <div>
+          <h3 class="text-xl font-bold text-slate-900">Curriculum</h3>
+          <ul class="mt-4 space-y-3">
+            {% for lesson in lessons %}
+            <li class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <div class="flex items-center justify-between gap-3">
+                <span class="font-semibold text-slate-800">{{ lesson.title }}</span>
+                <span class="text-xs uppercase tracking-wide text-slate-500">{{ lesson.lesson_type }}</span>
+              </div>
+              <p class="mt-2 text-sm text-slate-600">{{ lesson.duration_minutes }} minutes</p>
+            </li>
+            {% else %}
+            <li class="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-slate-600">Lesson content is being prepared for this course.</li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% if current_user.is_authenticated and current_user.__class__.__name__ == 'Student' and enrolled %}
+        <a href="{{ url_for('student.student_course_detail', slug=course.slug) }}" class="inline-flex rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-500">Open learning workspace</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

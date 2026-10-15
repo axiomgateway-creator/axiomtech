@@ -1,0 +1,24 @@
+{% extends 'admin/layout.html' %}
+{% block title %}Academy courses{% endblock %}
+{% block content %}
+<h1>Academy courses</h1>
+<p>Draft, publish, and maintain the learning catalogue and course content.</p>
+<a class="btn btn-primary" href="{{ url_for('admin.course_new') }}">Create course</a>
+<table>
+  <thead><tr><th>Course</th><th>Status</th><th>Price</th><th>Lessons</th><th>Enrollments</th><th>Actions</th></tr></thead>
+  <tbody>
+    {% for course in courses %}
+    <tr>
+      <td>{{ course.title }}</td><td>{{ course.status }}</td>
+      <td>{% if course.is_free %}Free{% else %}{{ course.currency }} {{ '%.2f'|format(course.price) }}{% endif %}</td>
+      <td>{{ course.lessons|length }}</td><td>{{ course.enrolments|length }}</td>
+      <td>
+        <a href="{{ url_for('admin.course_edit', course_id=course.id) }}">Edit</a> ·
+        <a href="{{ url_for('admin.lesson_new', course_id=course.id) }}">Add lesson</a> ·
+        <a href="{{ url_for('admin.quiz_new', course_id=course.id) }}">Add assessment</a>
+      </td>
+    </tr>
+    {% else %}<tr><td colspan="6">No courses have been created.</td></tr>{% endfor %}
+  </tbody>
+</table>
+{% endblock %}

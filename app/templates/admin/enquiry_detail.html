@@ -1,0 +1,33 @@
+{% extends 'admin/layout.html' %}
+{% block title %}Enquiry detail{% endblock %}
+{% block content %}
+<h1>Enquiry {{ enquiry.reference }}</h1>
+<div class="grid-2">
+  <div class="card">
+    <p><strong>Name:</strong> {{ enquiry.full_name }}</p>
+    <p><strong>Email:</strong> {{ enquiry.email }}</p>
+    <p><strong>Telephone:</strong> {{ enquiry.telephone }}</p>
+    <p><strong>Service:</strong> {{ enquiry.service.name if enquiry.service else enquiry.enquiry_type }}</p>
+    <p><strong>Type:</strong> {{ enquiry.enquiry_type }}</p>
+    <p><strong>Preferred contact:</strong> {{ enquiry.preferred_contact }}</p>
+    <p><strong>Description:</strong><br>{{ enquiry.description }}</p>
+  </div>
+  <div class="card">
+    <form method="post">
+      <div class="field-block">
+        <label>Status</label>
+        <select name="status">
+          {% for option in ['New', 'In Progress', 'Responded', 'Converted', 'Closed'] %}
+          <option value="{{ option }}" {% if enquiry.status == option %}selected{% endif %}>{{ option }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field-block">
+        <label>Internal notes</label>
+        <textarea name="internal_notes">{{ enquiry.internal_notes or '' }}</textarea>
+      </div>
+      <button class="btn btn-primary" type="submit">Save</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

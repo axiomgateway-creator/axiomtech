@@ -1,0 +1,24 @@
+{% extends 'admin/layout.html' %}
+{% block title %}Company settings{% endblock %}
+{% block content %}
+<h1>Company settings</h1>
+<form method="post" class="admin-form">
+  {{ form.hidden_tag() }}
+  <div class="form-grid admin-grid">
+    <div><label>Company name</label>{{ form.company_name() }}</div>
+    <div><label>Tagline</label>{{ form.tagline() }}</div>
+    <div><label>Contact email</label>{{ form.contact_email() }}</div>
+    <div><label>Telephone</label>{{ form.telephone() }}</div>
+    <div class="full-width"><label>Office address</label>{{ form.office_address() }}</div>
+    <div><label>Instagram URL</label>{{ form.instagram_url() }}</div>
+    <div><label>WhatsApp URL</label>{{ form.whatsapp_url() }}</div>
+    <div><label>Logo URL</label>{{ form.logo_url() }}</div>
+    <div><label>Favicon URL</label>{{ form.favicon_url() }}</div>
+    <div><label>Enquiry recipient</label>{{ form.enquiry_notification_email() }}</div>
+    <div><label>Canonical origin</label>{{ form.canonical_origin() }}</div>
+    <div class="full-width"><label>Footer text</label>{{ form.footer_text() }}</div>
+    <div class="full-width"><label>Meta description</label>{{ form.meta_description() }}</div>
+  </div>
+  <button class="btn btn-primary" type="submit">Save settings</button>
+</form>
+{% endblock %}

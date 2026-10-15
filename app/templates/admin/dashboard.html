@@ -1,0 +1,52 @@
+{% extends 'admin/layout.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<h1>Dashboard</h1>
+<div class="stats-grid">
+  <div class="stat-card"><span>Total enquiries</span><strong>{{ total_enquiries }}</strong></div>
+  <div class="stat-card"><span>New enquiries</span><strong>{{ unread }}</strong></div>
+  <div class="stat-card"><span>Published articles</span><strong>{{ published_articles }}</strong></div>
+  <div class="stat-card"><span>Draft articles</span><strong>{{ draft_articles }}</strong></div>
+  <div class="stat-card"><span>Published projects</span><strong>{{ published_projects }}</strong></div>
+</div>
+
+<h2>Academy</h2>
+<div class="stats-grid">
+  <div class="stat-card"><span>All courses</span><strong>{{ academy_counts.courses }}</strong></div>
+  <div class="stat-card"><span>Published courses</span><strong>{{ academy_counts.published_courses }}</strong></div>
+  <div class="stat-card"><span>Students</span><strong>{{ academy_counts.students }}</strong></div>
+  <div class="stat-card"><span>Enrollments</span><strong>{{ academy_counts.enrolments }}</strong></div>
+  <div class="stat-card"><span>Pending orders</span><strong>{{ academy_counts.pending_orders }}</strong></div>
+  <div class="stat-card"><span>Receipts to review</span><strong>{{ academy_counts.submitted_receipts }}</strong></div>
+  <div class="stat-card"><span>Certificates issued</span><strong>{{ academy_counts.issued_certificates }}</strong></div>
+  <div class="stat-card"><span>Digital resources</span><strong>{{ academy_counts.resources }}</strong></div>
+</div>
+<p><a class="btn btn-primary" href="{{ url_for('admin.courses_admin') }}">Manage academy courses</a> <a class="btn" href="{{ url_for('admin.products_admin') }}">Manage resources</a></p>
+
+<h2>Enquiry status</h2>
+<div class="stats-grid small-grid">
+  {% for status, count in counts.items() %}
+  <div class="stat-card"><span>{{ status }}</span><strong>{{ count }}</strong></div>
+  {% endfor %}
+</div>
+
+<h2>Recent enquiries</h2>
+<table>
+  <thead><tr><th>Reference</th><th>Name</th><th>Type</th><th>Status</th><th>Date</th></tr></thead>
+  <tbody>
+    {% for enquiry in recent_enquiries %}
+    <tr><td><a href="{{ url_for('admin.enquiry_detail', id=enquiry.id) }}">{{ enquiry.reference }}</a></td><td>{{ enquiry.full_name }}</td><td>{{ enquiry.enquiry_type }}</td><td>{{ enquiry.status }}</td><td>{{ enquiry.created_at.strftime('%d %b %Y') }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h2>Recent publishing activity</h2>
+<table>
+  <thead><tr><th>Title</th><th>Type</th><th>Status</th><th>Date</th></tr></thead>
+  <tbody>
+    {% for article in recent_articles %}
+    <tr><td>{{ article.title }}</td><td>Article</td><td>{{ article.status }}</td><td>{{ article.created_at.strftime('%d %b %Y') }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

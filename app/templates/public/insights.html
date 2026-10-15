@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}Insights and Resources | Axiom Gateway Consult{% endblock %}
+{% block content %}
+<section class="relative bg-slate-900 text-white py-20 lg:py-28 overflow-hidden">
+  <div class="absolute inset-0 z-0 opacity-20 bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1920&q=80');"></div>
+  <div class="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-900/95 to-slate-900/80 z-0"></div>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <div class="max-w-3xl space-y-4">
+      <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs sm:text-sm font-semibold tracking-wide uppercase">
+        <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+        Knowledge Hub
+      </div>
+      <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight">Insights & <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-sky-400">Resources</span></h1>
+      <p class="text-slate-300 text-lg sm:text-xl font-normal leading-relaxed">Thought leadership, practical guidance, and strategic insight for organizations and professionals.</p>
+    </div>
+  </div>
+</section>
+
+<section class="py-20 bg-white">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+    <form method="get" class="bg-slate-50 border border-slate-200 rounded-2xl p-4 sm:p-6 flex flex-col md:flex-row gap-4">
+      <input type="text" name="q" value="{{ q }}" placeholder="Search articles" class="flex-1 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+      <select name="category" class="rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <option value="">All categories</option>
+        {% for category in categories %}
+          <option value="{{ category.slug }}" {% if category.slug == category_slug %}selected{% endif %}>{{ category.name }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-all">Search</button>
+    </form>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+      {% for article in articles.items %}
+      <article class="group bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 p-7 flex flex-col justify-between hover:-translate-y-1">
+        <div class="space-y-4">
+          <div class="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">{{ article.category.name if article.category else 'Insights' }} · {{ article.published_at.strftime('%d %b %Y') if article.published_at else 'Draft' }}</div>
+          <h2 class="text-2xl font-bold text-slate-900">{{ article.title }}</h2>
+          <p class="text-slate-600 leading-relaxed">{{ article.excerpt }}</p>
+        </div>
+        <a href="{{ url_for('public.article_detail', slug=article.slug) }}" class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700">
+          Read Article <i class="fa-solid fa-arrow-right text-xs"></i>
+        </a>
+      </article>
+      {% else %}
+      <div class="md:col-span-2 xl:col-span-3 bg-slate-50 border border-dashed border-slate-300 rounded-2xl p-10 text-center">
+        <h3 class="text-2xl font-bold text-slate-900 mb-3">No articles published yet</h3>
+        <p class="text-slate-600">We will publish relevant insights and practical resources here as new content is created.</p>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% if articles.pages > 1 %}
+    <div class="flex items-center justify-center gap-4 pt-4 text-sm text-slate-600">
+      {% if articles.has_prev %}<a href="{{ url_for('public.insights', page=articles.prev_num, q=q, category=category_slug) }}" class="font-semibold text-blue-600 hover:text-blue-700">Previous</a>{% endif %}
+      <span>Page {{ articles.page }} of {{ articles.pages }}</span>
+      {% if articles.has_next %}<a href="{{ url_for('public.insights', page=articles.next_num, q=q, category=category_slug) }}" class="font-semibold text-blue-600 hover:text-blue-700">Next</a>{% endif %}
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

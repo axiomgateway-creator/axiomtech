@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Axiom Academy | Learning Workspace{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="min-h-screen bg-slate-50 font-sans text-slate-800 antialiased">
+  <header class="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
+    <div class="mx-auto flex h-16 max-w-screen-2xl items-center justify-between px-4 sm:px-6">
+      <div class="flex items-center gap-4">
+        <button id="student-menu-toggle" type="button" class="inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 lg:hidden" aria-label="Toggle student navigation" aria-expanded="false" aria-controls="student-mobile-nav">
+          <i id="student-menu-icon" class="fa-solid fa-bars"></i>
+        </button>
+        <a href="{{ url_for('public.academy_home') }}" class="flex items-center gap-3">
+          <img src="{{ url_for('static', filename='images/logo.png') }}" alt="{{ company_settings.company_name or 'Axiom Gateway Consult' }} logo" class="h-10 w-auto object-contain">
+          <span class="hidden border-l border-slate-200 pl-3 text-sm font-semibold text-slate-500 sm:block">Axiom Academy</span>
+        </a>
+      </div>
+      <div class="flex items-center gap-3">
+        {% if current_user.is_authenticated and current_user.__class__.__name__ == 'Student' %}
+          <span class="hidden text-sm font-medium text-slate-700 xl:block">{{ current_user.full_name }}</span>
+          <a href="{{ url_for('student.dashboard') }}" class="hidden rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 sm:inline-flex">Dashboard</a>
+          <a href="{{ url_for('student.student_logout') }}" class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-blue-700" aria-label="Sign out">
+            <i class="fa-solid fa-arrow-right-from-bracket" aria-hidden="true"></i><span class="hidden sm:inline">Logout</span>
+          </a>
+        {% elif current_user.is_authenticated and current_user.__class__.__name__ == 'AdminUser' %}
+          <a href="{{ url_for('admin.dashboard') }}" class="hidden rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 sm:inline-flex">Admin</a>
+          <a href="{{ url_for('admin.admin_logout') }}" class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-blue-700">Logout</a>
+        {% else %}
+          <a href="{{ url_for('student.student_login') }}" class="hidden rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 sm:inline-flex">Login</a>
+          <a href="{{ url_for('student.student_register') }}" class="hidden rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 sm:inline-flex">Register</a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="mx-auto max-w-screen-2xl space-y-3 px-4 pt-5 sm:px-6">
+        {% for category, message in messages %}
+          {% set cat = category or 'success' %}
+          <div class="flex items-center gap-3 rounded-lg border px-4 py-3 text-sm font-medium
+            {% if cat == 'error' or cat == 'danger' %}border-rose-200 bg-rose-50 text-rose-800
+            {% elif cat == 'warning' %}border-amber-200 bg-amber-50 text-amber-800
+            {% elif cat == 'info' %}border-sky-200 bg-sky-50 text-sky-800
+            {% else %}border-emerald-200 bg-emerald-50 text-emerald-800{% endif %}">
+            <span>{{ message }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <div class="mx-auto grid max-w-screen-2xl grid-cols-1 gap-6 px-4 py-6 sm:px-6 md:gap-8 md:py-8 {% if current_user.is_authenticated and current_user.__class__.__name__ == 'Student' %}md:grid-cols-[230px_minmax(0,1fr)]{% endif %}">
+    {% if current_user.is_authenticated and current_user.__class__.__name__ == 'Student' %}
+    <aside id="student-sidebar" class="hidden md:block" aria-label="Student sidebar">
+      <div class="sticky top-24 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+        <p class="px-3 pb-3 pt-2 text-xs font-bold uppercase tracking-widest text-slate-400">Academy</p>
+        <nav class="space-y-1">
+          <a href="{{ url_for('student.dashboard') }}" class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold {% if request.endpoint == 'student.dashboard' %}bg-blue-50 text-blue-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-blue-700{% endif %}">
+            <i class="fa-solid fa-table-columns w-4 text-center" aria-hidden="true"></i>Dashboard
+          </a>
+          <a href="{{ url_for('public.academy_home') }}" class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-blue-700">
+            <i class="fa-solid fa-house w-4 text-center" aria-hidden="true"></i>Academy
+          </a>
+          <a href="{{ url_for('public.academy_courses') }}" class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-blue-700">
+            <i class="fa-solid fa-book-open w-4 text-center" aria-hidden="true"></i>Courses
+          </a>
+          <a href="{{ url_for('public.academy_products') }}" class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-blue-700">
+            <i class="fa-solid fa-folder-open w-4 text-center" aria-hidden="true"></i>Resources
+          </a>
+          <a href="{{ url_for('public.verify_certificate') }}" class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-blue-700">
+            <i class="fa-solid fa-certificate w-4 text-center" aria-hidden="true"></i>Verify certificate
+          </a>
+          <div class="my-2 border-t border-slate-100"></div>
+          <a href="{{ url_for('student.my_courses') }}" {% if request.endpoint == 'student.my_courses' %}aria-current="page"{% endif %} class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold {% if request.endpoint == 'student.my_courses' %}bg-blue-50 text-blue-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-blue-700{% endif %}">
+            <i class="fa-solid fa-graduation-cap w-4 text-center" aria-hidden="true"></i>My courses
+          </a>
+          <a href="{{ url_for('student.student_orders') }}" {% if request.endpoint == 'student.student_orders' %}aria-current="page"{% endif %} class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold {% if request.endpoint == 'student.student_orders' %}bg-blue-50 text-blue-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-blue-700{% endif %}">
+            <i class="fa-solid fa-receipt w-4 text-center" aria-hidden="true"></i>Orders
+          </a>
+          <a href="{{ url_for('student.student_certificates') }}" {% if request.endpoint == 'student.student_certificates' %}aria-current="page"{% endif %} class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold {% if request.endpoint == 'student.student_certificates' %}bg-blue-50 text-blue-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-blue-700{% endif %}">
+            <i class="fa-solid fa-award w-4 text-center" aria-hidden="true"></i>Certificates
+          </a>
+        </nav>
+        <div class="mt-5 border-t border-slate-100 px-3 pt-4">
+          <a href="{{ url_for('public.academy_home') }}" class="text-xs font-semibold text-slate-500 hover:text-blue-700">Axiom Academy home <span aria-hidden="true">&rarr;</span></a>
+        </div>
+      </div>
+    </aside>
+    {% endif %}
+    <main class="min-w-0">{% block content %}{% endblock %}</main>
+  </div>
+
+  <script>
+    const studentMenuToggle = document.getElementById('student-menu-toggle');
+    const studentSidebar = document.getElementById('student-sidebar');
+    const studentMenuIcon = document.getElementById('student-menu-icon');
+    if (studentMenuToggle && studentSidebar) {
+      studentMenuToggle.addEventListener('click', () => {
+        const expanded = studentMenuToggle.getAttribute('aria-expanded') === 'true';
+        studentMenuToggle.setAttribute('aria-expanded', String(!expanded));
+        studentSidebar.classList.toggle('hidden');
+        studentMenuIcon.classList.toggle('fa-bars');
+        studentMenuIcon.classList.toggle('fa-xmark');
+      });
+    }
+  </script>
+</body>
+</html>

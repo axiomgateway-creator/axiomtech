@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}Privacy Policy | Axiom Gateway Consult{% endblock %}
+{% block content %}
+<section class="relative bg-slate-900 text-white py-20 lg:py-28 overflow-hidden">
+  <div class="absolute inset-0 z-0 opacity-20 bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1920&q=80');"></div>
+  <div class="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-900/95 to-slate-900/80 z-0"></div>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <div class="max-w-3xl space-y-4">
+      <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs sm:text-sm font-semibold tracking-wide uppercase">
+        <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+        Policy
+      </div>
+      <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight">Privacy Policy</h1>
+    </div>
+  </div>
+</section>
+
+<section class="py-20 bg-white">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="rounded-3xl border border-slate-200 bg-slate-50 p-6 sm:p-8 lg:p-10 shadow-sm space-y-6 text-slate-700">
+      <p>We collect only the information necessary to respond to enquiries, manage service requests, and maintain responsible communication.</p>
+      <div>
+        <h2 class="text-2xl font-bold text-slate-900 mb-3">Information collected</h2>
+        <p>We may collect your full name, organization, email address, telephone number, service interest, enquiry details, and consent preferences.</p>
+      </div>
+      <div>
+        <h2 class="text-2xl font-bold text-slate-900 mb-3">Purpose</h2>
+        <p>We use this information to manage enquiries, respond to requests, provide relevant service information, and improve our communication and delivery quality.</p>
+      </div>
+      <div>
+        <h2 class="text-2xl font-bold text-slate-900 mb-3">Retention</h2>
+        <p>We retain enquiry records as reasonably necessary for business administration, customer communication, and operational follow-up.</p>
+      </div>
+      <div>
+        <h2 class="text-2xl font-bold text-slate-900 mb-3">Third-party processors</h2>
+        <p>We may use email delivery services or hosting infrastructure to process communication and store records. We configure access carefully and do not sell personal data.</p>
+      </div>
+      <div>
+        <h2 class="text-2xl font-bold text-slate-900 mb-3">Contact</h2>
+        <p>For privacy-related questions, contact <a href="mailto:{{ company_settings.contact_email }}" class="text-blue-600 hover:underline">{{ company_settings.contact_email }}</a>.</p>
+      </div>
+      <p class="text-sm text-slate-500">This policy should be reviewed by the company with legal counsel before formal publication in a particular jurisdiction.</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

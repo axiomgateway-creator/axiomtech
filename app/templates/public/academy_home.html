@@ -1,0 +1,266 @@
+{% extends 'base.html' %}
+
+{% block title %}Axiom Academy | Learn Skills. Build Your Future.{% endblock %}
+{% block meta_description %}Axiom Academy helps individuals and organizations develop practical digital, technical, analytical, and professional skills through structured courses and digital learning resources.{% endblock %}
+{% block canonical_url %}{{ (company_settings.canonical_origin or config.CANONICAL_ORIGIN)|trim('/') }}{{ url_for('public.academy_home') }}{% endblock %}
+
+{% block content %}
+<section class="relative isolate overflow-hidden bg-slate-950 text-white">
+  <div class="absolute inset-0 -z-20">
+    <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=2000&q=85" alt="" fetchpriority="high" class="h-full w-full object-cover object-center opacity-30">
+  </div>
+  <div class="absolute inset-0 -z-10 bg-slate-950/75"></div>
+  <div class="mx-auto grid max-w-7xl items-center gap-12 px-4 py-20 sm:px-6 sm:py-24 lg:grid-cols-12 lg:gap-10 lg:px-8 lg:py-28">
+    <div class="lg:col-span-7">
+      <p class="text-sm font-bold uppercase tracking-[0.18em] text-sky-300">Axiom Academy</p>
+      <h1 class="mt-5 max-w-3xl text-4xl font-extrabold leading-tight sm:text-5xl lg:text-6xl">Learn Skills.<br><span class="text-sky-300">Build Your Future.</span></h1>
+      <p class="mt-6 max-w-2xl text-lg leading-relaxed text-slate-200">Axiom Academy helps individuals and organizations develop practical digital, technical, analytical, and professional skills through structured learning and accessible digital resources.</p>
+      <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+        <a href="{{ url_for('public.academy_courses') }}" class="inline-flex min-h-12 items-center justify-center rounded-lg bg-sky-400 px-6 py-3 font-bold text-slate-950 transition hover:bg-sky-300 focus:outline-none focus:ring-2 focus:ring-sky-200 focus:ring-offset-2 focus:ring-offset-slate-950">Explore courses <i class="fa-solid fa-arrow-right ml-2 text-sm" aria-hidden="true"></i></a>
+        {% if current_user.is_authenticated and current_user.__class__.__name__ == 'Student' %}
+          <a href="{{ url_for('student.dashboard') }}" class="inline-flex min-h-12 items-center justify-center rounded-lg border border-white/35 px-6 py-3 font-semibold text-white transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white">My dashboard</a>
+        {% else %}
+          <a href="{{ url_for('student.student_register') }}" class="inline-flex min-h-12 items-center justify-center rounded-lg border border-white/35 px-6 py-3 font-semibold text-white transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white">Create your account</a>
+        {% endif %}
+      </div>
+      <form action="{{ url_for('public.academy_courses') }}" method="get" class="mt-8 max-w-xl">
+        <label for="academy-search" class="mb-2 block text-sm font-semibold text-slate-100">Find a course</label>
+        <div class="flex flex-col gap-2 rounded-xl bg-white p-2 sm:flex-row">
+          <div class="flex min-w-0 flex-1 items-center gap-3 px-3">
+            <i class="fa-solid fa-magnifying-glass text-slate-400" aria-hidden="true"></i>
+            <input id="academy-search" name="q" type="search" value="{{ search_query or '' }}" placeholder="Search skills, topics, or courses" class="min-h-11 w-full border-0 bg-transparent text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-0" autocomplete="off">
+          </div>
+          <button type="submit" class="min-h-11 rounded-lg bg-blue-700 px-5 font-semibold text-white transition hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">Search courses</button>
+        </div>
+      </form>
+    </div>
+    <div class="hidden lg:col-span-5 lg:block">
+      <div class="ml-auto max-w-md border-l-2 border-sky-300/80 pl-7">
+        <p class="text-xs font-bold uppercase tracking-[0.18em] text-sky-200">Learning with purpose</p>
+        <p class="mt-4 text-2xl font-semibold leading-snug text-white">Practical knowledge for stronger teams, better decisions, and confident careers.</p>
+        <a href="{{ url_for('public.who_we_serve') }}" class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-sky-200 hover:text-white focus:outline-none focus:underline">How we support organizations <span aria-hidden="true">&rarr;</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% if categories %}
+<section class="border-b border-slate-200 bg-white py-14 sm:py-16" aria-labelledby="academy-categories-heading">
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div class="mb-7 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+      <div>
+        <p class="text-sm font-bold uppercase tracking-[0.16em] text-blue-700">Learning pathways</p>
+        <h2 id="academy-categories-heading" class="mt-2 text-3xl font-extrabold text-slate-900">Explore what you want to learn</h2>
+      </div>
+      <a href="{{ url_for('public.academy_courses') }}" class="inline-flex items-center gap-2 text-sm font-bold text-blue-700 hover:text-blue-900 focus:outline-none focus:underline">All courses <span aria-hidden="true">&rarr;</span></a>
+    </div>
+    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {% for category in categories %}
+      <a href="{{ url_for('public.academy_courses', category=category.id) }}" class="group flex min-h-24 items-start gap-4 border border-slate-200 bg-slate-50 p-5 transition hover:border-blue-300 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2">
+        <span class="flex h-10 w-10 shrink-0 items-center justify-center bg-slate-900 text-sm font-bold text-white" aria-hidden="true">{{ category.name[:1]|upper }}</span>
+        <span>
+          <span class="block font-bold text-slate-900 group-hover:text-blue-800">{{ category.name }}</span>
+          {% if category.description %}<span class="mt-1 block text-sm leading-relaxed text-slate-600">{{ category.description }}</span>{% endif %}
+        </span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<section class="bg-slate-50 py-16 sm:py-20" aria-labelledby="featured-courses-heading">
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div class="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+      <div>
+        <p class="text-sm font-bold uppercase tracking-[0.16em] text-blue-700">Start here</p>
+        <h2 id="featured-courses-heading" class="mt-2 text-3xl font-extrabold text-slate-900">Featured courses</h2>
+      </div>
+      <a href="{{ url_for('public.academy_courses') }}" class="inline-flex items-center gap-2 text-sm font-bold text-blue-700 hover:text-blue-900 focus:outline-none focus:underline">View all courses <span aria-hidden="true">&rarr;</span></a>
+    </div>
+    {% if featured_courses %}
+    <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {% for course in featured_courses %}
+      <article class="group flex h-full flex-col overflow-hidden border border-slate-200 bg-white transition hover:border-slate-300 hover:shadow-lg">
+        <a href="{{ url_for('public.academy_course_detail', slug=course.slug) }}" class="relative block aspect-[16/9] overflow-hidden bg-slate-200 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-600" aria-label="View {{ course.title }}">
+          {% if course.cover_image %}
+          <img src="{{ course.cover_image }}" alt="{{ course.title }} course cover" loading="lazy" class="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]">
+          {% else %}
+          <div class="flex h-full items-end bg-[linear-gradient(135deg,#0f172a_0%,#164e63_58%,#0e7490_100%)] p-5">
+            <span class="max-w-[85%] text-xl font-bold leading-snug text-white">{{ course.category.name if course.category else 'Axiom Academy' }}</span>
+          </div>
+          {% endif %}
+          <span class="absolute left-3 top-3 bg-white px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-slate-800">Featured</span>
+        </a>
+        <div class="flex flex-1 flex-col p-5">
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            {% if course.category %}<span>{{ course.category.name }}</span>{% endif %}
+            {% if course.difficulty %}<span>{{ course.difficulty }}</span>{% endif %}
+            {% if course.duration_hours %}<span>{{ course.duration_hours }} hours</span>{% endif %}
+          </div>
+          <h3 class="mt-3 text-xl font-bold leading-snug text-slate-900"><a href="{{ url_for('public.academy_course_detail', slug=course.slug) }}" class="focus:outline-none focus:underline group-hover:text-blue-800">{{ course.title }}</a></h3>
+          <p class="mt-2 flex-1 text-sm leading-relaxed text-slate-600">{{ course.short_description }}</p>
+          <div class="mt-5 flex items-center justify-between border-t border-slate-100 pt-4">
+            {% if course.is_free %}<span class="font-bold text-emerald-700">Free</span>{% elif course.price is not none %}<span class="font-bold text-slate-900">{{ course.currency }} {{ '%.2f'|format(course.price) }}</span>{% else %}<span class="text-sm font-semibold text-slate-600">Price unavailable</span>{% endif %}
+            <a href="{{ url_for('public.academy_course_detail', slug=course.slug) }}" class="inline-flex items-center gap-2 text-sm font-bold text-blue-700 hover:text-blue-900 focus:outline-none focus:underline">View course <span aria-hidden="true">&rarr;</span></a>
+          </div>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="border border-dashed border-slate-300 bg-white px-6 py-10 text-center">
+      <h3 class="text-lg font-bold text-slate-900">New courses are on the way</h3>
+      <p class="mt-2 text-sm text-slate-600">Browse the catalogue to see the currently published learning opportunities.</p>
+      <a href="{{ url_for('public.academy_courses') }}" class="mt-4 inline-flex font-bold text-blue-700 hover:text-blue-900 focus:outline-none focus:underline">Browse all courses <span class="ml-2" aria-hidden="true">&rarr;</span></a>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+{% set course_lists = namespace(featured_slugs=[]) %}
+{% for course in featured_courses %}{% set course_lists.featured_slugs = course_lists.featured_slugs + [course.slug] %}{% endfor %}
+{% set recent_list = namespace(items=[]) %}
+{% for course in recent_courses %}{% if course.slug not in course_lists.featured_slugs %}{% set recent_list.items = recent_list.items + [course] %}{% endif %}{% endfor %}
+<section class="bg-white py-16 sm:py-20" aria-labelledby="recent-courses-heading">
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div class="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+      <div>
+        <p class="text-sm font-bold uppercase tracking-[0.16em] text-blue-700">Freshly published</p>
+        <h2 id="recent-courses-heading" class="mt-2 text-3xl font-extrabold text-slate-900">Recently added courses</h2>
+      </div>
+      <a href="{{ url_for('public.academy_courses') }}" class="inline-flex items-center gap-2 text-sm font-bold text-blue-700 hover:text-blue-900 focus:outline-none focus:underline">View all courses <span aria-hidden="true">&rarr;</span></a>
+    </div>
+    {% if recent_list.items %}
+    <div class="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+      {% for course in recent_list.items %}
+      <article class="group flex min-h-36 overflow-hidden border border-slate-200 bg-white transition hover:border-blue-300 hover:shadow-md">
+        <a href="{{ url_for('public.academy_course_detail', slug=course.slug) }}" class="hidden w-32 shrink-0 overflow-hidden bg-slate-900 sm:block" aria-label="View {{ course.title }}">
+          {% if course.cover_image %}<img src="{{ course.cover_image }}" alt="" loading="lazy" class="h-full w-full object-cover">{% else %}<span class="flex h-full items-end bg-[linear-gradient(145deg,#0f172a,#155e75)] p-3 text-lg font-bold text-white">{{ course.title[:1]|upper }}</span>{% endif %}
+        </a>
+        <div class="flex min-w-0 flex-1 flex-col p-4">
+          <p class="text-xs font-bold uppercase tracking-wide text-slate-500">{{ course.category.name if course.category else 'Course' }}{% if course.duration_hours %} · {{ course.duration_hours }} hours{% endif %}</p>
+          <h3 class="mt-2 line-clamp-2 font-bold leading-snug text-slate-900 group-hover:text-blue-800"><a href="{{ url_for('public.academy_course_detail', slug=course.slug) }}" class="focus:outline-none focus:underline">{{ course.title }}</a></h3>
+          <p class="mt-2 line-clamp-2 text-sm text-slate-600">{{ course.short_description }}</p>
+          <div class="mt-auto flex items-center justify-between gap-3 pt-4 text-sm">
+            {% if course.is_free %}<span class="font-bold text-emerald-700">Free</span>{% elif course.price is not none %}<span class="font-bold text-slate-900">{{ course.currency }} {{ '%.2f'|format(course.price) }}</span>{% else %}<span class="text-sm font-semibold text-slate-600">Price unavailable</span>{% endif %}
+            <a href="{{ url_for('public.academy_course_detail', slug=course.slug) }}" class="font-bold text-blue-700 hover:text-blue-900 focus:outline-none focus:underline">Details &rarr;</a>
+          </div>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+    {% elif not featured_courses %}
+    <p class="border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600">There are no recently published courses yet. Check back as new learning opportunities are added.</p>
+    {% else %}
+    <p class="border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600">The featured courses above are the latest published courses.</p>
+    {% endif %}
+  </div>
+</section>
+
+<section class="border-y border-slate-200 bg-slate-100 py-16 sm:py-20" aria-labelledby="academy-benefits-heading">
+  <div class="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-12 lg:px-8">
+    <div class="lg:col-span-5">
+      <p class="text-sm font-bold uppercase tracking-[0.16em] text-blue-700">Learning built for application</p>
+      <h2 id="academy-benefits-heading" class="mt-3 text-3xl font-extrabold leading-tight text-slate-900">Practical learning for real work and real growth.</h2>
+      <p class="mt-4 leading-relaxed text-slate-600">Build capability through focused courses, guided lessons, and resources that support professional development.</p>
+    </div>
+    <ul class="grid gap-x-8 gap-y-5 sm:grid-cols-2 lg:col-span-7">
+      <li class="border-l-2 border-blue-700 pl-4"><h3 class="font-bold text-slate-900">Relevant skills</h3><p class="mt-1 text-sm leading-relaxed text-slate-600">Explore digital, technology, data, leadership, and business learning.</p></li>
+      <li class="border-l-2 border-blue-700 pl-4"><h3 class="font-bold text-slate-900">Structured lessons</h3><p class="mt-1 text-sm leading-relaxed text-slate-600">Move through published course lessons in a clear learning sequence.</p></li>
+      <li class="border-l-2 border-blue-700 pl-4"><h3 class="font-bold text-slate-900">Progress tracking</h3><p class="mt-1 text-sm leading-relaxed text-slate-600">Track lesson completion and course progress from your student dashboard.</p></li>
+      <li class="border-l-2 border-blue-700 pl-4"><h3 class="font-bold text-slate-900">Assessments and certificates</h3><p class="mt-1 text-sm leading-relaxed text-slate-600">Take assessments when a course includes them. Certificates are issued for eligible completed courses.</p></li>
+      <li class="border-l-2 border-blue-700 pl-4"><h3 class="font-bold text-slate-900">Learning resources</h3><p class="mt-1 text-sm leading-relaxed text-slate-600">Find supporting digital resources, with access controlled through the resource purchase flow.</p></li>
+      <li class="border-l-2 border-blue-700 pl-4"><h3 class="font-bold text-slate-900">Organizational training</h3><p class="mt-1 text-sm leading-relaxed text-slate-600">Discuss customized staff learning with Axiom Gateway Consult.</p></li>
+    </ul>
+  </div>
+</section>
+
+<section class="bg-white py-16 sm:py-20" aria-labelledby="how-learning-works-heading">
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div class="max-w-2xl">
+      <p class="text-sm font-bold uppercase tracking-[0.16em] text-blue-700">Your learning journey</p>
+      <h2 id="how-learning-works-heading" class="mt-2 text-3xl font-extrabold text-slate-900">How learning works</h2>
+    </div>
+    <ol class="mt-9 grid gap-0 border-y border-slate-200 sm:grid-cols-2 lg:grid-cols-3">
+      <li class="border-b border-slate-200 py-6 pr-6 sm:border-r lg:border-b-0"><span class="text-sm font-bold text-blue-700">01</span><h3 class="mt-2 font-bold text-slate-900"><a class="hover:text-blue-700 focus:outline-none focus:underline" href="{{ url_for('public.academy_courses') }}">Explore courses</a></h3><p class="mt-1 text-sm text-slate-600">Find a published course that fits your learning goals.</p></li>
+      <li class="border-b border-slate-200 py-6 sm:pl-6 lg:border-b-0 lg:border-r"><span class="text-sm font-bold text-blue-700">02</span><h3 class="mt-2 font-bold text-slate-900"><a class="hover:text-blue-700 focus:outline-none focus:underline" href="{{ url_for('student.student_register') }}">Create an account</a></h3><p class="mt-1 text-sm text-slate-600">Register to enrol and access your student workspace.</p></li>
+      <li class="border-b border-slate-200 py-6 sm:pr-6 lg:border-b-0"><span class="text-sm font-bold text-blue-700">03</span><h3 class="mt-2 font-bold text-slate-900">Enrol or purchase</h3><p class="mt-1 text-sm text-slate-600">Enrol in free courses or complete verified payment for paid courses.</p></li>
+      <li class="border-b border-slate-200 py-6 lg:border-b-0 lg:border-r lg:pr-6"><span class="text-sm font-bold text-blue-700">04</span><h3 class="mt-2 font-bold text-slate-900">Learn and track progress</h3><p class="mt-1 text-sm text-slate-600">Open authorized lessons and follow progress in your dashboard.</p></li>
+      <li class="border-b border-slate-200 py-6 sm:pl-6 lg:border-b-0 lg:border-r"><span class="text-sm font-bold text-blue-700">05</span><h3 class="mt-2 font-bold text-slate-900">Complete lessons and assessments</h3><p class="mt-1 text-sm text-slate-600">Mark lessons complete and take assessments included in your course.</p></li>
+      <li class="py-6 lg:pl-6"><span class="text-sm font-bold text-blue-700">06</span><h3 class="mt-2 font-bold text-slate-900">Earn eligible certificates</h3><p class="mt-1 text-sm text-slate-600">A certificate is issued when you complete a certificate-eligible course.</p></li>
+    </ol>
+  </div>
+</section>
+
+{% if products %}
+<section class="bg-slate-950 py-16 text-white sm:py-20" aria-labelledby="academy-resources-heading">
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div class="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+      <div>
+        <p class="text-sm font-bold uppercase tracking-[0.16em] text-sky-300">Guides and tools</p>
+        <h2 id="academy-resources-heading" class="mt-2 text-3xl font-extrabold">Digital resources to support your growth</h2>
+      </div>
+      <a href="{{ url_for('public.academy_products') }}" class="inline-flex items-center gap-2 text-sm font-bold text-sky-300 hover:text-white focus:outline-none focus:underline">View all resources <span aria-hidden="true">&rarr;</span></a>
+    </div>
+    <div class="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+      {% for product in products %}
+      <article class="flex overflow-hidden border border-slate-700 bg-slate-900">
+        {% if product.cover_image %}
+        <a href="{{ url_for('public.academy_product_detail', slug=product.slug) }}" class="hidden w-28 shrink-0 overflow-hidden bg-slate-800 sm:block" aria-label="View {{ product.title }}"><img src="{{ product.cover_image }}" alt="{{ product.title }} resource cover" loading="lazy" class="h-full w-full object-cover"></a>
+        {% else %}
+        <div class="hidden w-3 shrink-0 bg-sky-400 sm:block" aria-hidden="true"></div>
+        {% endif %}
+        <div class="flex min-w-0 flex-1 flex-col p-5">
+          <p class="text-xs font-bold uppercase tracking-wide text-sky-300">{{ product.category or 'Digital resource' }}</p>
+          <h3 class="mt-2 text-lg font-bold text-white"><a href="{{ url_for('public.academy_product_detail', slug=product.slug) }}" class="hover:text-sky-200 focus:outline-none focus:underline">{{ product.title }}</a></h3>
+          <p class="mt-2 flex-1 text-sm leading-relaxed text-slate-300">{{ product.short_description }}</p>
+          <div class="mt-5 flex items-center justify-between gap-3 border-t border-slate-700 pt-4">
+            {% if product.is_free %}<span class="font-bold text-emerald-300">Free</span>{% elif product.price is not none %}<span class="font-bold text-white">{{ product.currency }} {{ '%.2f'|format(product.price) }}</span>{% else %}<span class="text-sm font-semibold text-slate-300">Price unavailable</span>{% endif %}
+            <a href="{{ url_for('public.academy_product_detail', slug=product.slug) }}" class="text-sm font-bold text-sky-300 hover:text-white focus:outline-none focus:underline">View resource &rarr;</a>
+          </div>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<section class="bg-sky-50 py-14 sm:py-16" aria-labelledby="corporate-training-heading">
+  <div class="mx-auto flex max-w-7xl flex-col gap-6 px-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+    <div class="max-w-3xl">
+      <p class="text-sm font-bold uppercase tracking-[0.16em] text-blue-800">For organizations</p>
+      <h2 id="corporate-training-heading" class="mt-2 text-3xl font-extrabold text-slate-900">Training your team? Let’s talk.</h2>
+      <p class="mt-3 leading-relaxed text-slate-700">Enquire about staff digital skills, data analytics, technology, professional development, and customized organizational learning programmes.</p>
+    </div>
+    <a href="{{ url_for('public.contact') }}" class="inline-flex min-h-12 shrink-0 items-center justify-center rounded-lg bg-blue-800 px-6 py-3 font-bold text-white hover:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-700 focus:ring-offset-2">Discuss team training <i class="fa-solid fa-arrow-right ml-2 text-sm" aria-hidden="true"></i></a>
+  </div>
+</section>
+
+<section class="border-t border-slate-200 bg-white py-8" aria-labelledby="certificate-check-heading">
+  <div class="mx-auto flex max-w-7xl flex-col gap-3 px-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+    <div>
+      <h2 id="certificate-check-heading" class="font-bold text-slate-900">Have an Axiom Academy certificate?</h2>
+      <p class="mt-1 text-sm text-slate-600">Check its verification status using the certificate code.</p>
+    </div>
+    <a href="{{ url_for('public.verify_certificate') }}" class="inline-flex items-center gap-2 font-bold text-blue-700 hover:text-blue-900 focus:outline-none focus:underline">Verify a certificate <span aria-hidden="true">&rarr;</span></a>
+  </div>
+</section>
+
+<section class="bg-blue-800 py-14 text-white sm:py-16" aria-labelledby="academy-final-cta-heading">
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div class="flex flex-col gap-7 lg:flex-row lg:items-center lg:justify-between">
+      <div class="max-w-2xl">
+        <h2 id="academy-final-cta-heading" class="text-3xl font-extrabold">Your next opportunity starts with learning.</h2>
+        <p class="mt-3 leading-relaxed text-blue-100">Explore practical learning opportunities and digital resources designed to help you develop your capabilities and move forward with confidence.</p>
+      </div>
+      <div class="flex flex-col gap-3 sm:flex-row lg:shrink-0">
+        <a href="{{ url_for('public.academy_courses') }}" class="inline-flex min-h-11 items-center justify-center rounded-lg bg-white px-5 py-2.5 font-bold text-blue-900 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800">Explore courses</a>
+        <a href="{{ url_for('student.student_register') }}" class="inline-flex min-h-11 items-center justify-center rounded-lg border border-white/60 px-5 py-2.5 font-bold text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white">Create an account</a>
+        <a href="{{ url_for('public.academy_products') }}" class="inline-flex min-h-11 items-center justify-center rounded-lg px-4 py-2.5 font-bold text-white underline decoration-white/50 underline-offset-4 hover:decoration-white focus:outline-none focus:ring-2 focus:ring-white">Digital resources</a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

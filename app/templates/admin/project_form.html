@@ -1,0 +1,26 @@
+{% extends 'admin/layout.html' %}
+{% block title %}Project form{% endblock %}
+{% block content %}
+<h1>{% if project %}Edit{% else %}New{% endif %} project</h1>
+<form method="post" class="admin-form">
+  {{ form.hidden_tag() }}
+  <div class="form-grid admin-grid">
+    <div><label>Title</label>{{ form.title() }}</div>
+    <div><label>Slug</label>{{ form.slug() }}</div>
+    <div><label>Client</label>{{ form.client_name() }}</div>
+    <div><label>Category</label>{{ form.category() }}</div>
+    <div class="full-width"><label>Summary</label>{{ form.summary() }}</div>
+    <div class="full-width"><label>Challenge / objective</label>{{ form.challenge() }}</div>
+    <div class="full-width"><label>Services delivered</label>{{ form.services_delivered() }}</div>
+    <div class="full-width"><label>Solution</label>{{ form.solution() }}</div>
+    <div class="full-width"><label>Outcomes</label>{{ form.outcomes() }}</div>
+    <div><label>Featured image</label>{{ form.featured_image() }}</div>
+    <div><label>Featured project</label><input type="checkbox" name="is_featured" {% if project and project.is_featured %}checked{% endif %}></div>
+    <div class="full-width"><label>Gallery</label>{{ form.gallery() }}</div>
+    <div><label>SEO title</label>{{ form.seo_title() }}</div>
+    <div><label>Status</label>{{ form.status() }}</div>
+    <div class="full-width"><label>SEO description</label>{{ form.seo_description() }}</div>
+  </div>
+  <button class="btn btn-primary" type="submit">Save</button>
+</form>
+{% endblock %}

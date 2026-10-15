@@ -1,0 +1,15 @@
+{% extends 'admin/layout.html' %}
+{% block title %}Academy resources{% endblock %}
+{% block content %}
+<h1>Academy resources</h1>
+<p>Upload paid or free learning resources. Files are stored privately and served only to purchasers.</p>
+<a class="btn btn-primary" href="{{ url_for('admin.product_new') }}">Upload resource</a>
+<table>
+  <thead><tr><th>Resource</th><th>Status</th><th>Price</th><th>File</th><th>Updated</th></tr></thead>
+  <tbody>
+    {% for product in products %}
+    <tr><td>{{ product.title }}</td><td>{{ product.status }}</td><td>{% if product.is_free %}Free{% else %}{{ product.currency }} {{ '%.2f'|format(product.price) }}{% endif %}</td><td>{{ 'Available' if product.file_path else 'Missing' }}</td><td>{{ product.updated_at.strftime('%d %b %Y') }}</td></tr>
+    {% else %}<tr><td colspan="5">No resources have been uploaded.</td></tr>{% endfor %}
+  </tbody>
+</table>
+{% endblock %}

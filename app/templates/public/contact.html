@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block title %}Contact Us | Axiom Gateway Consult{% endblock %}
+{% block content %}
+<section class="relative bg-slate-900 text-white py-20 lg:py-28 overflow-hidden">
+  <div class="absolute inset-0 z-0 opacity-20 bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1920&q=80');"></div>
+  <div class="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-900/95 to-slate-900/80 z-0"></div>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <div class="max-w-3xl space-y-4">
+      <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs sm:text-sm font-semibold tracking-wide uppercase">
+        <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+        Get in Touch
+      </div>
+      <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight">Contact <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-sky-400">Us</span></h1>
+      <p class="text-slate-300 text-lg sm:text-xl font-normal leading-relaxed">We welcome enquiries about consulting, digital solutions, training, partnership opportunities, and project support.</p>
+    </div>
+  </div>
+</section>
+
+<section class="py-20 bg-white">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div class="lg:col-span-5 space-y-6">
+        <div class="rounded-2xl bg-slate-50 border border-slate-200 p-8 shadow-sm">
+          <h2 class="text-2xl font-bold text-slate-900 mb-4">Connect with our team</h2>
+          <ul class="space-y-5 text-slate-700">
+            <li class="flex items-start gap-3"><i class="fa-solid fa-envelope text-blue-600 mt-1"></i><div><span class="font-semibold text-slate-900">Email</span><br><a href="mailto:{{ company_settings.contact_email }}" class="text-blue-600 hover:underline">{{ company_settings.contact_email }}</a></div></li>
+            <li class="flex items-start gap-3"><i class="fa-solid fa-phone text-blue-600 mt-1"></i><div><span class="font-semibold text-slate-900">Telephone</span><br><a href="tel:{{ company_settings.telephone }}" class="text-blue-600 hover:underline">{{ company_settings.telephone }}</a></div></li>
+            <li class="flex items-start gap-3"><i class="fa-solid fa-location-dot text-blue-600 mt-1"></i><div><span class="font-semibold text-slate-900">Office address</span><br><span>{{ company_settings.office_address }}</span><br><span class="text-sm text-slate-500">Please confirm before visiting.</span></div></li>
+            {% if company_settings.instagram_url %}
+              <li class="flex items-start gap-3"><i class="fa-brands fa-instagram text-blue-600 mt-1"></i><div><span class="font-semibold text-slate-900">Instagram</span><br><a href="{{ company_settings.instagram_url }}" target="_blank" rel="noreferrer" class="text-blue-600 hover:underline">{{ company_settings.instagram_url }}</a></div></li>
+            {% endif %}
+            {% if company_settings.whatsapp_url %}
+              <li class="flex items-start gap-3"><i class="fa-brands fa-whatsapp text-emerald-600 mt-1"></i><div><span class="font-semibold text-slate-900">WhatsApp</span><br><a href="{{ company_settings.whatsapp_url }}" target="_blank" rel="noreferrer" class="text-blue-600 hover:underline">{{ company_settings.whatsapp_url }}</a></div></li>
+            {% endif %}
+          </ul>
+        </div>
+      </div>
+
+      <div class="lg:col-span-7 rounded-2xl border border-slate-200 bg-white shadow-sm p-6 sm:p-8">
+        <form method="post" novalidate class="space-y-5">
+          {{ form.hidden_tag() }}
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              {{ form.full_name.label(class_='block text-sm font-semibold text-slate-700 mb-2') }}
+              {{ form.full_name(class_='w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500') }}
+              {% if form.full_name.errors %}<div class="mt-2 text-sm text-red-600">{{ form.full_name.errors[0] }}</div>{% endif %}
+            </div>
+
+            <div>
+              {{ form.organization.label(class_='block text-sm font-semibold text-slate-700 mb-2') }}
+              {{ form.organization(class_='w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500') }}
+            </div>
+
+            <div>
+              {{ form.email.label(class_='block text-sm font-semibold text-slate-700 mb-2') }}
+              {{ form.email(class_='w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500') }}
+              {% if form.email.errors %}<div class="mt-2 text-sm text-red-600">{{ form.email.errors[0] }}</div>{% endif %}
+            </div>
+
+            <div>
+              {{ form.telephone.label(class_='block text-sm font-semibold text-slate-700 mb-2') }}
+              {{ form.telephone(class_='w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500') }}
+              {% if form.telephone.errors %}<div class="mt-2 text-sm text-red-600">{{ form.telephone.errors[0] }}</div>{% endif %}
+            </div>
+
+            <div>
+              {{ form.service.label(class_='block text-sm font-semibold text-slate-700 mb-2') }}
+              {{ form.service(class_='w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500') }}
+              {% if form.service.errors %}<div class="mt-2 text-sm text-red-600">{{ form.service.errors[0] }}</div>{% endif %}
+            </div>
+
+            <div>
+              {{ form.enquiry_type.label(class_='block text-sm font-semibold text-slate-700 mb-2') }}
+              {{ form.enquiry_type(class_='w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500') }}
+            </div>
+          </div>
+
+          <div>
+            {{ form.description.label(class_='block text-sm font-semibold text-slate-700 mb-2') }}
+            {{ form.description(class_='w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 min-h-[140px] focus:outline-none focus:ring-2 focus:ring-blue-500') }}
+            {% if form.description.errors %}<div class="mt-2 text-sm text-red-600">{{ form.description.errors[0] }}</div>{% endif %}
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5 items-center">
+            <div>
+              {{ form.preferred_contact.label(class_='block text-sm font-semibold text-slate-700 mb-2') }}
+              {{ form.preferred_contact(class_='w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500') }}
+            </div>
+
+            <div class="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+              {{ form.consent() }} {{ form.consent.label() }}
+            </div>
+          </div>
+
+          <button type="submit" class="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-all shadow-md shadow-blue-600/20">
+            Submit enquiry <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

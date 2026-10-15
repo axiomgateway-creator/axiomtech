@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 80" role="img" aria-label="Axiom Gateway Consult logo">
+  <rect width="240" height="80" rx="16" fill="#0f172a"/>
+  <g transform="translate(16 16)">
+    <rect x="0" y="0" width="48" height="48" rx="12" fill="#38bdf8"/>
+    <path d="M16 14 L24 26 L32 14" stroke="#ffffff" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M15 30 L24 18 L33 30" stroke="#dbeafe" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="80" y="38" font-family="Verdana, Arial, sans-serif" font-size="22" font-weight="700" fill="#f8fafc">Axiom</text>
+  <text x="80" y="58" font-family="Verdana, Arial, sans-serif" font-size="15" fill="#cbd5e1">Gateway Consult</text>
+</svg>
