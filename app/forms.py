@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
-from wtforms import BooleanField, HiddenField, IntegerField, SelectField, StringField, TextAreaField
-from wtforms.validators import DataRequired, Email, Length, Optional, ValidationError
+from wtforms import BooleanField, FloatField, HiddenField, IntegerField, SelectField, StringField, TextAreaField
+from wtforms.validators import DataRequired, Email, Length, NumberRange, Optional, ValidationError
 
 
 class ContactForm(FlaskForm):
@@ -35,6 +35,18 @@ class AdminLoginForm(FlaskForm):
     password = StringField("Password", validators=[DataRequired()])
 
 
+class AdminRegistrationForm(FlaskForm):
+    name = StringField("Full name", validators=[DataRequired(), Length(min=2, max=120)])
+    email = StringField("Email", validators=[DataRequired(), Email(), Length(max=120)])
+    setup_key = StringField("Admin setup key", validators=[DataRequired(), Length(max=255)])
+    password = StringField("Password", validators=[DataRequired(), Length(min=12, max=128)])
+    confirm_password = StringField("Confirm password", validators=[DataRequired(), Length(min=12, max=128)])
+
+    def validate_confirm_password(self, field):
+        if field.data != self.password.data:
+            raise ValidationError("Passwords do not match.")
+
+
 class StudentRegistrationForm(FlaskForm):
     full_name = StringField("Full name", validators=[DataRequired(), Length(min=2, max=160)])
     email = StringField("Email address", validators=[DataRequired(), Email()])
@@ -50,6 +62,30 @@ class StudentRegistrationForm(FlaskForm):
 
 class StudentLoginForm(FlaskForm):
     email = StringField("Email", validators=[DataRequired(), Email()])
+    password = StringField("Password", validators=[DataRequired()])
+    remember = BooleanField("Remember me")
+
+
+class InstructorRegistrationForm(FlaskForm):
+    full_name = StringField("Full name", validators=[DataRequired(), Length(min=2, max=160)])
+    email = StringField("Email address", validators=[DataRequired(), Email(), Length(max=160)])
+    phone = StringField("Phone number", validators=[Optional(), Length(max=60)])
+    professional_title = StringField("Professional title or expertise", validators=[DataRequired(), Length(max=160)])
+    biography = TextAreaField("Biography", validators=[DataRequired(), Length(min=30, max=3000)])
+    teaching_experience = TextAreaField("Teaching experience", validators=[Optional(), Length(max=3000)])
+    qualifications = TextAreaField("Qualifications and certifications", validators=[Optional(), Length(max=3000)])
+    subject_areas = TextAreaField("Courses or subject areas", validators=[DataRequired(), Length(min=3, max=2000)])
+    password = StringField("Password", validators=[DataRequired(), Length(min=8, max=128)])
+    confirm_password = StringField("Confirm password", validators=[DataRequired(), Length(min=8, max=128)])
+    terms_accepted = BooleanField("I agree to the instructor terms", validators=[DataRequired()])
+
+    def validate_confirm_password(self, field):
+        if field.data != self.password.data:
+            raise ValidationError("Passwords do not match.")
+
+
+class InstructorLoginForm(FlaskForm):
+    email = StringField("Email address", validators=[DataRequired(), Email()])
     password = StringField("Password", validators=[DataRequired()])
     remember = BooleanField("Remember me")
 
@@ -127,3 +163,5 @@ class CompanySettingsForm(FlaskForm):
     enquiry_notification_email = StringField("Enquiry recipient", validators=[DataRequired(), Email()])
     meta_description = TextAreaField("Meta description", validators=[Optional(), Length(max=300)])
     canonical_origin = StringField("Canonical origin", validators=[Optional()])
+    academy_commission_percent = FloatField("Academy commission percentage", validators=[Optional(), NumberRange(min=0, max=100)])
+    academy_minimum_payout_kobo = IntegerField("Minimum payout (kobo)", validators=[Optional(), NumberRange(min=0)])

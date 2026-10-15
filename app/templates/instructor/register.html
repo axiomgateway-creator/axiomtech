@@ -1,0 +1,26 @@
+{% extends 'instructor/base.html' %}
+{% block title %}Instructor application{% endblock %}
+{% block auth_content %}
+<section class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+  <p class="text-xs font-bold uppercase tracking-widest text-blue-700">Axiom Academy</p>
+  <h1 class="mt-2 text-3xl font-bold text-slate-900">Apply to teach</h1>
+  <p class="mt-2 text-sm text-slate-600">Applications are reviewed by an administrator before instructor tools are enabled.</p>
+  <form method="post" enctype="multipart/form-data" class="mt-6 grid gap-4 sm:grid-cols-2">
+    {{ form.hidden_tag() }}
+    {% for field in [form.full_name, form.email, form.phone, form.professional_title] %}
+      <label class="grid gap-1 text-sm font-semibold text-slate-700">{{ field.label }}{{ field(class_='rounded-md border border-slate-300 px-3 py-2 font-normal') }}{% for error in field.errors %}<span class="text-xs text-rose-700">{{ error }}</span>{% endfor %}</label>
+    {% endfor %}
+    {% for field in [form.biography, form.teaching_experience, form.qualifications, form.subject_areas] %}
+      <label class="grid gap-1 text-sm font-semibold text-slate-700 sm:col-span-2">{{ field.label }}{{ field(rows=3, class_='rounded-md border border-slate-300 px-3 py-2 font-normal') }}{% for error in field.errors %}<span class="text-xs text-rose-700">{{ error }}</span>{% endfor %}</label>
+    {% endfor %}
+    <label class="grid gap-1 text-sm font-semibold text-slate-700 sm:col-span-2">Profile photo<input type="file" name="profile_photo" accept="image/jpeg,image/png,image/webp" class="rounded-md border border-slate-300 px-3 py-2 font-normal"><span class="text-xs font-normal text-slate-500">Optional JPG, PNG, or WebP image up to 5 MB.</span></label>
+    {% for field in [form.password, form.confirm_password] %}
+      <label class="grid gap-1 text-sm font-semibold text-slate-700">{{ field.label }}{{ field(type='password', class_='rounded-md border border-slate-300 px-3 py-2 font-normal') }}{% for error in field.errors %}<span class="text-xs text-rose-700">{{ error }}</span>{% endfor %}</label>
+    {% endfor %}
+    <label class="flex items-start gap-2 text-sm text-slate-700 sm:col-span-2">{{ form.terms_accepted(class_='mt-1') }}<span>I agree to the Axiom Academy instructor terms and understand that course publication and student data access require approval.</span></label>
+    {% for error in form.terms_accepted.errors %}<span class="text-xs text-rose-700 sm:col-span-2">{{ error }}</span>{% endfor %}
+    <button class="rounded-md bg-blue-700 px-5 py-3 font-semibold text-white hover:bg-blue-800 sm:col-span-2">Submit application</button>
+  </form>
+  <p class="mt-5 text-sm text-slate-600">Already applied? <a class="font-semibold text-blue-700" href="{{ url_for('instructor.login') }}">Sign in</a></p>
+</section>
+{% endblock %}

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import hmac
 from datetime import datetime, timezone
 
 from flask import current_app
@@ -8,6 +10,40 @@ from sqlalchemy import UniqueConstraint
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from . import db
+
+
+def _generate_password_hash(password):
+    return generate_password_hash(password, method="pbkdf2:sha256")
+
+
+def _check_password_hash(password_hash, password):
+    method, separator, remainder = password_hash.partition("$")
+    if not separator or not method.startswith("scrypt:") or hasattr(hashlib, "scrypt"):
+        return check_password_hash(password_hash, password)
+
+    parts = password_hash.split("$", 2)
+    if len(parts) != 3:
+        return False
+
+    method_parts = parts[0].split(":")
+    if len(method_parts) != 4 or len(parts[2]) % 2:
+        return False
+
+    try:
+        n, r, p = (int(value) for value in method_parts[1:])
+    except ValueError:
+        return False
+
+    from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
+
+    digest = Scrypt(
+        salt=parts[1].encode(),
+        length=len(parts[2]) // 2,
+        n=n,
+        r=r,
+        p=p,
+    ).derive(password.encode())
+    return hmac.compare_digest(digest.hex(), parts[2])
 
 
 class TimestampMixin:
@@ -35,10 +71,10 @@ class AdminUser(UserMixin, TimestampMixin, db.Model):
         return f"admin:{self.id}"
 
     def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
+        self.password_hash = _generate_password_hash(password)
 
     def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
+        return _check_password_hash(self.password_hash, password)
 
 
 class Student(UserMixin, TimestampMixin, db.Model):
@@ -65,14 +101,57 @@ class Student(UserMixin, TimestampMixin, db.Model):
         return f"student:{self.id}"
 
     def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
+        self.password_hash = _generate_password_hash(password)
 
     def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
+        return _check_password_hash(self.password_hash, password)
 
     @property
     def is_active(self):
         return bool(self.is_active_account)
+
+
+class Instructor(UserMixin, TimestampMixin, db.Model):
+    __tablename__ = "instructors"
+
+    id = db.Column(db.Integer, primary_key=True)
+    full_name = db.Column(db.String(160), nullable=False)
+    email = db.Column(db.String(160), unique=True, nullable=False, index=True)
+    password_hash = db.Column(db.String(255), nullable=False)
+    phone = db.Column(db.String(60))
+    professional_title = db.Column(db.String(160))
+    biography = db.Column(db.Text)
+    teaching_experience = db.Column(db.Text)
+    qualifications = db.Column(db.Text)
+    subject_areas = db.Column(db.Text)
+    profile_photo = db.Column(db.String(255))
+    payout_bank_name = db.Column(db.String(120))
+    payout_account_name = db.Column(db.String(160))
+    payout_account_number_encrypted = db.Column(db.Text)
+    payout_bank_code = db.Column(db.String(30))
+    status = db.Column(db.String(20), default="pending", nullable=False, index=True)
+    decision_reason = db.Column(db.Text)
+    terms_accepted_at = db.Column(db.DateTime)
+    last_login_at = db.Column(db.DateTime)
+    reviewed_by_admin_id = db.Column(db.Integer, db.ForeignKey("admin_users.id"))
+    reviewed_by = db.relationship("AdminUser")
+    courses = db.relationship("Course", back_populates="instructor")
+    notifications = db.relationship("InstructorNotification", back_populates="instructor", cascade="all, delete-orphan")
+    earnings = db.relationship("InstructorEarning", back_populates="instructor", cascade="all, delete-orphan")
+    payout_requests = db.relationship("InstructorPayoutRequest", back_populates="instructor", cascade="all, delete-orphan")
+
+    def get_id(self):
+        return f"instructor:{self.id}"
+
+    def set_password(self, password):
+        self.password_hash = _generate_password_hash(password)
+
+    def check_password(self, password):
+        return _check_password_hash(self.password_hash, password)
+
+    @property
+    def is_active(self):
+        return self.status not in {"rejected", "suspended"}
 
 
 class CompanySettings(TimestampMixin, db.Model):
@@ -92,6 +171,8 @@ class CompanySettings(TimestampMixin, db.Model):
     enquiry_notification_email = db.Column(db.String(200), default="axiomgateway@gmail.com")
     meta_description = db.Column(db.Text)
     canonical_origin = db.Column(db.String(255), default="http://localhost:5000")
+    academy_commission_percent = db.Column(db.Float)
+    academy_minimum_payout_kobo = db.Column(db.Integer, default=0, nullable=False)
 
     @staticmethod
     def get_settings():
@@ -150,7 +231,13 @@ class Course(TimestampMixin, db.Model):
     description = db.Column(db.Text, nullable=False)
     cover_image = db.Column(db.String(255))
     category_id = db.Column(db.Integer, db.ForeignKey("course_categories.id"), nullable=True)
+    instructor_id = db.Column(db.Integer, db.ForeignKey("instructors.id"), nullable=True, index=True)
+    review_status = db.Column(db.String(20), default="not_required", nullable=False, index=True)
+    target_audience = db.Column(db.Text)
+    requirements = db.Column(db.Text)
+    what_students_learn = db.Column(db.Text)
     category = db.relationship("CourseCategory", back_populates="courses")
+    instructor = db.relationship("Instructor", back_populates="courses")
     instructor_name = db.Column(db.String(120), default="Axiom Gateway Consult")
     difficulty = db.Column(db.String(30), default="Beginner")
     duration_hours = db.Column(db.Integer, default=1)
@@ -178,6 +265,9 @@ class CourseLesson(TimestampMixin, db.Model):
     lesson_type = db.Column(db.String(40), default="text")
     content = db.Column(db.Text)
     external_video_url = db.Column(db.String(255))
+    module_title = db.Column(db.String(160))
+    resource_path = db.Column(db.String(255))
+    resource_filename = db.Column(db.String(255))
     duration_minutes = db.Column(db.Integer, default=15)
     is_preview = db.Column(db.Boolean, default=False, nullable=False)
     order_index = db.Column(db.Integer, default=0)
@@ -356,9 +446,96 @@ class AcademyCertificate(TimestampMixin, db.Model):
     certificate_number = db.Column(db.String(80), unique=True, nullable=False, index=True)
     verification_code = db.Column(db.String(80), unique=True, nullable=False, index=True)
     issue_date = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    certificate_type = db.Column(db.String(30), default="completion", nullable=False)
     status = db.Column(db.String(20), default="issued", nullable=False)
+    revoked_at = db.Column(db.DateTime)
+    revoked_reason = db.Column(db.Text)
+    issued_by_instructor_id = db.Column(db.Integer, db.ForeignKey("instructors.id"), nullable=True)
     student = db.relationship("Student", back_populates="certificates")
     course = db.relationship("Course")
+    issued_by_instructor = db.relationship("Instructor")
+
+
+class InstructorNotification(TimestampMixin, db.Model):
+    __tablename__ = "instructor_notifications"
+
+    id = db.Column(db.Integer, primary_key=True)
+    instructor_id = db.Column(db.Integer, db.ForeignKey("instructors.id"), nullable=False, index=True)
+    event_key = db.Column(db.String(160), unique=True, nullable=True)
+    category = db.Column(db.String(50), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    target_url = db.Column(db.String(255))
+    is_read = db.Column(db.Boolean, default=False, nullable=False, index=True)
+    instructor = db.relationship("Instructor", back_populates="notifications")
+
+
+class InstructorAuditLog(TimestampMixin, db.Model):
+    __tablename__ = "instructor_audit_logs"
+
+    id = db.Column(db.Integer, primary_key=True)
+    instructor_id = db.Column(db.Integer, db.ForeignKey("instructors.id"), nullable=True, index=True)
+    admin_id = db.Column(db.Integer, db.ForeignKey("admin_users.id"), nullable=True)
+    action = db.Column(db.String(80), nullable=False)
+    target_type = db.Column(db.String(80), nullable=False)
+    target_id = db.Column(db.Integer)
+    details = db.Column(db.Text)
+    instructor = db.relationship("Instructor")
+    admin = db.relationship("AdminUser")
+
+
+class InstructorEarning(TimestampMixin, db.Model):
+    __tablename__ = "instructor_earnings"
+
+    id = db.Column(db.Integer, primary_key=True)
+    instructor_id = db.Column(db.Integer, db.ForeignKey("instructors.id"), nullable=False, index=True)
+    order_id = db.Column(db.Integer, db.ForeignKey("academy_orders.id"), nullable=False, unique=True)
+    gross_kobo = db.Column(db.Integer, nullable=False)
+    gateway_fee_kobo = db.Column(db.Integer, default=0, nullable=False)
+    commission_kobo = db.Column(db.Integer, nullable=False)
+    instructor_share_kobo = db.Column(db.Integer, nullable=False)
+    payout_status = db.Column(db.String(20), default="available", nullable=False, index=True)
+    instructor = db.relationship("Instructor", back_populates="earnings")
+    order = db.relationship("AcademyOrder")
+
+
+class InstructorPayoutRequest(TimestampMixin, db.Model):
+    __tablename__ = "instructor_payout_requests"
+
+    id = db.Column(db.Integer, primary_key=True)
+    instructor_id = db.Column(db.Integer, db.ForeignKey("instructors.id"), nullable=False, index=True)
+    amount_kobo = db.Column(db.Integer, nullable=False)
+    status = db.Column(db.String(20), default="pending", nullable=False, index=True)
+    decision_note = db.Column(db.Text)
+    payment_reference = db.Column(db.String(120))
+    reviewed_by_admin_id = db.Column(db.Integer, db.ForeignKey("admin_users.id"), nullable=True)
+    reviewed_by = db.relationship("AdminUser")
+    instructor = db.relationship("Instructor", back_populates="payout_requests")
+    allocations = db.relationship("InstructorPayoutAllocation", back_populates="payout_request", cascade="all, delete-orphan")
+
+
+class InstructorPayoutAllocation(TimestampMixin, db.Model):
+    __tablename__ = "instructor_payout_allocations"
+
+    id = db.Column(db.Integer, primary_key=True)
+    payout_request_id = db.Column(db.Integer, db.ForeignKey("instructor_payout_requests.id"), nullable=False, index=True)
+    earning_id = db.Column(db.Integer, db.ForeignKey("instructor_earnings.id"), nullable=False, unique=True)
+    amount_kobo = db.Column(db.Integer, nullable=False)
+    payout_request = db.relationship("InstructorPayoutRequest", back_populates="allocations")
+    earning = db.relationship("InstructorEarning")
+
+
+class InstructorReversal(TimestampMixin, db.Model):
+    __tablename__ = "instructor_reversals"
+
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey("academy_orders.id"), nullable=False, unique=True)
+    instructor_id = db.Column(db.Integer, db.ForeignKey("instructors.id"), nullable=False, index=True)
+    gross_reversed_kobo = db.Column(db.Integer, nullable=False)
+    commission_reversed_kobo = db.Column(db.Integer, nullable=False)
+    instructor_share_reversed_kobo = db.Column(db.Integer, nullable=False)
+    reason = db.Column(db.Text)
+    instructor = db.relationship("Instructor")
+    order = db.relationship("AcademyOrder")
 
 
 class Article(TimestampMixin, db.Model):

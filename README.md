@@ -67,14 +67,21 @@ flask db upgrade
 
 The app also creates the tables automatically in non-migration contexts for local testing.
 
+After pulling schema changes, apply them with `flask db upgrade`. The instructor portal adds an instructor application workflow, course ownership, certificates, notifications, audit records, earning ledger, and payout requests. For local use without migrations, set `AUTO_CREATE_DB=true`; normal application startup does not create or alter database tables.
+
+## Instructor portal
+
+Instructors apply at `/academy/instructor/register`. Administrators review applications and course submissions at `/admin/instructors`. Approved instructors can manage courses, enrolled students, admission certificates, analytics, notifications, and payout requests under `/academy/instructor/`. Paid course checkout uses the existing Paystack integration when `PAYSTACK_SECRET_KEY` is configured; without it, the existing bank-transfer receipt review remains available. Set an academy commission percentage in Company Settings before instructor net earnings are calculated. Configure SMTP to deliver application, decision, and payout email notices.
+
 ## Administrator bootstrap
 
-Create an initial admin account with the CLI command:
+To create the first administrator in a browser, set a private setup key in `.env`:
 
-export FLASK_APP=wsgi.py
-flask create-admin
+```dotenv
+ADMIN_SETUP_KEY=use-a-long-random-secret
+```
 
-This command prompts for name, email, and password and stores a hashed password in the database.
+Then open `/admin/signup` and submit the setup key with the administrator's name, email, and password. Signup is disabled after the first administrator has been created, and is unavailable when `ADMIN_SETUP_KEY` is unset. Keep the setup key private and remove it from the environment after creating the account. Existing installations can still use the `flask create-admin` CLI command.
 
 ## Email configuration
 

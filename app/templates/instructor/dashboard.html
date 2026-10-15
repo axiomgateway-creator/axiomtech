@@ -1,0 +1,24 @@
+{% extends 'instructor/base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="flex flex-wrap items-end justify-between gap-4">
+  <div><p class="text-xs font-bold uppercase tracking-widest text-blue-700">Instructor workspace</p><h1 class="mt-1 text-3xl font-bold text-slate-900">Dashboard</h1></div>
+  <a href="{{ url_for('instructor.course_new') }}" class="rounded-md bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-800"><i class="fa-solid fa-plus mr-2"></i>Create course</a>
+</div>
+<div class="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+  {% for label, value in [('Courses',metrics.courses),('Published',metrics.published),('Drafts',metrics.drafts),('Awaiting review',metrics.awaiting_review),('Enrollments',metrics.enrollments),('New in 30 days',metrics.new_students),('Gross sales', '₦%.2f'|format(metrics.gross_sales_kobo / 100)),('Instructor share', '₦%.2f'|format(metrics.earnings_kobo / 100)),('Pending payouts','₦%.2f'|format(metrics.pending_payouts_kobo / 100)),('Paid out','₦%.2f'|format(metrics.completed_payouts_kobo / 100)),('Unread notifications',metrics.unread_notifications)] %}
+  <div class="rounded-md border border-slate-200 bg-white p-4"><p class="text-xs font-semibold uppercase text-slate-500">{{ label }}</p><p class="mt-2 text-2xl font-bold text-slate-900">{{ value }}</p></div>
+  {% endfor %}
+</div>
+<div class="mt-8 grid gap-6 xl:grid-cols-2">
+  <section class="rounded-md border border-slate-200 bg-white p-5"><div class="flex items-center justify-between"><h2 class="text-lg font-bold">Recent enrollments</h2><a class="text-sm font-semibold text-blue-700" href="{{ url_for('instructor.students') }}">All students</a></div>
+    {% for enrollment in recent_enrollments %}<div class="mt-4 flex justify-between gap-3 border-t border-slate-100 pt-3 text-sm"><span>{{ enrollment.student.full_name }} <span class="text-slate-500">· {{ enrollment.course.title }}</span></span><span class="text-slate-500">{{ enrollment.created_at.strftime('%d %b %Y') }}</span></div>{% else %}<p class="mt-4 text-sm text-slate-500">No enrollments yet. Published courses will appear here as students join.</p>{% endfor %}
+  </section>
+  <section class="rounded-md border border-slate-200 bg-white p-5"><div class="flex items-center justify-between"><h2 class="text-lg font-bold">Recent activity</h2><a class="text-sm font-semibold text-blue-700" href="{{ url_for('instructor.notifications') }}">Notifications</a></div>
+    {% for notification in notifications %}<div class="mt-4 border-t border-slate-100 pt-3 text-sm"><p>{{ notification.message }}</p><p class="mt-1 text-xs text-slate-500">{{ notification.created_at.strftime('%d %b %Y %H:%M') }}</p></div>{% else %}<p class="mt-4 text-sm text-slate-500">No notifications yet.</p>{% endfor %}
+  </section>
+  <section class="rounded-md border border-slate-200 bg-white p-5 xl:col-span-2"><div class="flex items-center justify-between"><h2 class="text-lg font-bold">Recent transactions</h2><a class="text-sm font-semibold text-blue-700" href="{{ url_for('instructor.earnings') }}">Earnings</a></div>
+    {% for order in recent_orders %}<div class="mt-4 flex flex-wrap justify-between gap-3 border-t border-slate-100 pt-3 text-sm"><span>{{ order.item_type|title }} · {{ order.reference }} · {{ order.status|title }}</span><span>{{ order.currency }} {{ '%.2f'|format(order.amount) }} · {{ order.created_at.strftime('%d %b %Y') }}</span></div>{% else %}<p class="mt-4 text-sm text-slate-500">No course transactions yet.</p>{% endfor %}
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,11 @@
+{% extends 'instructor/base.html' %}
+{% block title %}Instructor profile{% endblock %}
+{% block content %}
+<p class="text-xs font-bold uppercase tracking-widest text-blue-700">Account</p><h1 class="mt-1 text-3xl font-bold">Instructor profile</h1>
+<form method="post" enctype="multipart/form-data" class="mt-5 grid gap-4 rounded-md border border-slate-200 bg-white p-5 sm:grid-cols-2 sm:p-7"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {% for key,label,value in [('full_name','Full name',instructor.full_name),('email','Email address',instructor.email),('phone','Phone number',instructor.phone),('professional_title','Professional title',instructor.professional_title)] %}<label class="grid gap-1 text-sm font-semibold">{{ label }}<input name="{{ key }}" value="{{ value or '' }}" required class="rounded-md border border-slate-300 px-3 py-2 font-normal"></label>{% endfor %}
+  {% for key,label,value in [('biography','Biography',instructor.biography),('teaching_experience','Teaching experience',instructor.teaching_experience),('qualifications','Qualifications and certifications',instructor.qualifications),('subject_areas','Subjects you teach',instructor.subject_areas)] %}<label class="grid gap-1 text-sm font-semibold sm:col-span-2">{{ label }}<textarea name="{{ key }}" rows="3" class="rounded-md border border-slate-300 px-3 py-2 font-normal">{{ value or '' }}</textarea></label>{% endfor %}
+  <label class="grid gap-1 text-sm font-semibold sm:col-span-2">Replace profile photo<input type="file" name="profile_photo" accept="image/jpeg,image/png,image/webp" class="rounded-md border border-slate-300 px-3 py-2 font-normal"><span class="text-xs font-normal text-slate-500">JPG, PNG, or WebP up to 5 MB. {% if instructor.profile_photo %}A photo is currently set.{% endif %}</span></label>
+  <button class="rounded-md bg-blue-700 px-5 py-3 font-semibold text-white sm:col-span-2 sm:justify-self-start">Save profile</button>
+</form>
+{% endblock %}

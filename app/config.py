@@ -6,7 +6,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 class Config:
     APP_ENV = os.getenv("APP_ENV", "development")
+    AUTO_CREATE_DB = os.getenv("AUTO_CREATE_DB", "false").lower() == "true"
     SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key")
+    ADMIN_SETUP_KEY = os.getenv("ADMIN_SETUP_KEY")
     SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "sqlite:///{base}".format(base=str(BASE_DIR / "instance" / "axiom.db")))
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {}

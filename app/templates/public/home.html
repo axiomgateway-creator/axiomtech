@@ -196,9 +196,22 @@
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
       {% for service in services %}
+      {% if service.slug == 'digital-solutions-it' %}
+        {% set service_image = 'image4.png' %}
+      {% elif service.slug == 'human-resource-organizational-development' %}
+        {% set service_image = 'image6.png' %}
+      {% elif service.slug == 'business-management-consulting' %}
+        {% set service_image = 'image7.png' %}
+      {% elif service.slug == 'digital-marketing-creative' %}
+        {% set service_image = 'image5.png' %}
+      {% elif service.slug == 'data-analytics-business-intelligence' %}
+        {% set service_image = 'image.png' %}
+      {% else %}
+        {% set service_image = 'image3.png' %}
+      {% endif %}
       <article class="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col justify-between group hover:-translate-y-1">
         <div class="h-40 bg-slate-100 relative overflow-hidden">
-          <img src="{{ url_for('static', filename='images/image2.png') }}" alt="{{ service.name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90" loading="lazy" />
+          <img src="{{ url_for('static', filename='images/' ~ service_image) }}" alt="{{ service.name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90" loading="lazy" />
           <div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent"></div>
           <div class="absolute bottom-3 left-4">
             <div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center text-lg shadow-md">

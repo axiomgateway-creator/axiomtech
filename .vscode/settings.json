@@ -1,3 +1,9 @@
 {
-    "python-envs.defaultEnvManager": "ms-python.python:system"
+    "python-envs.defaultEnvManager": "ms-python.python:system",
+    "chat.tools.terminal.autoApprove": {
+        "/^\\.venv/bin/pytest -q tests/test_site\\.py -k 'homepage_uses_distinct_images_for_services or services_page_shows_service_items_and_distinct_images'$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
 }

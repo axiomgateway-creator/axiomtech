@@ -12,7 +12,7 @@
         What We Deliver
       </div>
       <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight">Our <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-sky-400">Services</span></h1>
-      <p class="text-slate-300 text-lg sm:text-xl font-normal leading-relaxed">Axiom Gateway Consult supports organizations, institutions, and individuals through strategic, digital, human, and data-driven solutions.</p>
+      <p class="text-slate-300 text-lg sm:text-xl font-normal leading-relaxed">A focused portfolio of solutions for private organizations, public institutions, development partners, and growth-minded businesses.</p>
     </div>
   </div>
 </section>
@@ -21,18 +21,83 @@
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
       {% for service in services %}
-      <article class="group bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 p-8 flex flex-col justify-between hover:-translate-y-1">
-        <div>
-          <div class="w-14 h-14 rounded-xl bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white flex items-center justify-center text-2xl transition-colors mb-6 shadow-sm">
+      {% if service.slug == 'digital-solutions-it' %}
+        {% set service_image = 'image4.png' %}
+      {% elif service.slug == 'human-resource-organizational-development' %}
+        {% set service_image = 'image6.png' %}
+      {% elif service.slug == 'business-management-consulting' %}
+        {% set service_image = 'image7.png' %}
+      {% elif service.slug == 'digital-marketing-creative' %}
+        {% set service_image = 'image5.png' %}
+      {% elif service.slug == 'data-analytics-business-intelligence' %}
+        {% set service_image = 'image.png' %}
+      {% else %}
+        {% set service_image = 'image3.png' %}
+      {% endif %}
+      {% if service.slug == 'digital-solutions-it' %}
+        {% set service_title = 'Digital Solutions and IT Services' %}
+        {% set service_description = 'Technology systems, websites, portals, and digital modernization for organizations.' %}
+      {% elif service.slug == 'human-resource-organizational-development' %}
+        {% set service_title = 'Human Resource and Organizational Development' %}
+        {% set service_description = 'Capacity development, workforce strategies, and people-focused organizational improvement.' %}
+      {% elif service.slug == 'business-management-consulting' %}
+        {% set service_title = 'Business and Management Consulting' %}
+        {% set service_description = 'Strategic direction, planning, optimization, and advisory support for operations and growth.' %}
+      {% elif service.slug == 'digital-marketing-creative' %}
+        {% set service_title = 'Digital Marketing and Creative Services' %}
+        {% set service_description = 'Brand communication, content strategy, marketing support, and creative digital execution.' %}
+      {% elif service.slug == 'data-analytics-business-intelligence' %}
+        {% set service_title = 'Data Analytics and Business Intelligence' %}
+        {% set service_description = 'Insight generation, reporting, dashboards, and data-driven decision support.' %}
+      {% else %}
+        {% set service_title = service.name %}
+        {% set service_description = service.short_description %}
+      {% endif %}
+      <article class="group bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col hover:-translate-y-1">
+        <div class="h-48 bg-slate-100 relative overflow-hidden">
+          <img src="{{ url_for('static', filename='images/' ~ service_image) }}" alt="{{ service_title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent"></div>
+          <div class="absolute bottom-4 left-5 w-11 h-11 rounded-xl bg-blue-600 text-white flex items-center justify-center text-lg shadow-lg">
             <i class="fa-solid {{ service.icon or 'fa-briefcase' }}" aria-hidden="true"></i>
           </div>
-          <h2 class="text-2xl font-bold text-slate-900 mb-3">{{ service.name }}</h2>
-          <p class="text-slate-600 leading-relaxed mb-6">{{ service.short_description }}</p>
         </div>
 
-        <a href="{{ url_for('public.service_detail', slug=service.slug) }}" class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700">
-          View service <i class="fa-solid fa-arrow-right text-xs"></i>
-        </a>
+        <div class="p-7 flex flex-1 flex-col">
+          <h2 class="text-2xl font-bold text-slate-900 mb-3">{{ service_title }}</h2>
+          <p class="text-slate-600 leading-relaxed mb-6">{{ service_description }}</p>
+
+          <div class="border-t border-slate-100 pt-5 mb-6">
+            <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">What we can help with</p>
+            <ul class="space-y-2">
+              {% if service.slug == 'digital-solutions-it' %}
+                <li class="text-sm text-slate-600 flex items-start gap-2"><i class="fa-solid fa-check text-blue-500 mt-1"></i><span>Web design &amp; development</span></li>
+                <li class="text-sm text-slate-600 flex items-start gap-2"><i class="fa-solid fa-check text-blue-500 mt-1"></i><span>Web development</span></li>
+                <li class="text-sm text-slate-600 flex items-start gap-2"><i class="fa-solid fa-check text-blue-500 mt-1"></i><span>Business portals</span></li>
+                <li class="text-sm text-slate-600 flex items-start gap-2"><i class="fa-solid fa-check text-blue-500 mt-1"></i><span>Cloud hosting support</span></li>
+              {% elif service.slug == 'human-resource-organizational-development' %}
+                <li class="text-sm text-slate-600 flex items-start gap-2"><i class="fa-solid fa-check text-blue-500 mt-1"></i><span>Training needs assessment</span></li>
+                <li class="text-sm text-slate-600 flex items-start gap-2"><i class="fa-solid fa-check text-blue-500 mt-1"></i><span>Workforce development</span></li>
+                <li class="text-sm text-slate-600 flex items-start gap-2"><i class="fa-solid fa-check text-blue-500 mt-1"></i><span>Team building</span></li>
+              {% elif service.slug == 'business-management-consulting' %}
+                <li class="text-sm text-slate-600 flex items-start gap-2"><i class="fa-solid fa-check text-blue-500 mt-1"></i><span>Business planning</span></li>
+                <li class="text-sm text-slate-600 flex items-start gap-2"><i class="fa-solid fa-check text-blue-500 mt-1"></i><span>Project advisory</span></li>
+                <li class="text-sm text-slate-600 flex items-start gap-2"><i class="fa-solid fa-check text-blue-500 mt-1"></i><span>Process improvement</span></li>
+              {% elif service.slug == 'digital-marketing-creative' %}
+                <li class="text-sm text-slate-600 flex items-start gap-2"><i class="fa-solid fa-check text-blue-500 mt-1"></i><span>Brand identity</span></li>
+                <li class="text-sm text-slate-600 flex items-start gap-2"><i class="fa-solid fa-check text-blue-500 mt-1"></i><span>SEO support</span></li>
+                <li class="text-sm text-slate-600 flex items-start gap-2"><i class="fa-solid fa-check text-blue-500 mt-1"></i><span>Creative content</span></li>
+              {% else %}
+                <li class="text-sm text-slate-600 flex items-start gap-2"><i class="fa-solid fa-check text-blue-500 mt-1"></i><span>Turn insights into action</span></li>
+                <li class="text-sm text-slate-600 flex items-start gap-2"><i class="fa-solid fa-check text-blue-500 mt-1"></i><span>Dashboard reporting</span></li>
+                <li class="text-sm text-slate-600 flex items-start gap-2"><i class="fa-solid fa-check text-blue-500 mt-1"></i><span>Performance analysis</span></li>
+              {% endif %}
+            </ul>
+          </div>
+
+          <a href="{{ url_for('public.service_detail', slug=service.slug) }}" class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700 mt-auto">
+            Learn details <i class="fa-solid fa-arrow-right text-xs"></i>
+          </a>
+        </div>
       </article>
       {% endfor %}
     </div>

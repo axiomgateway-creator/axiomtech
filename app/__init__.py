@@ -1,6 +1,9 @@
 from pathlib import Path
 
 from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+
 from flask import Flask, render_template
 from flask_login import LoginManager
 from flask_limiter import Limiter
@@ -11,8 +14,6 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
 
 from .config import Config
-
-load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 
 db = SQLAlchemy()
@@ -29,7 +30,7 @@ limiter = Limiter(
 
 
 def load_user(user_id):
-    from .models import AdminUser, Student
+    from .models import AdminUser, Instructor, Student
 
     if not user_id:
         return None
@@ -38,6 +39,8 @@ def load_user(user_id):
         return db.session.get(Student, int(suffix))
     if prefix == "admin" and suffix.isdigit():
         return db.session.get(AdminUser, int(suffix))
+    if prefix == "instructor" and suffix.isdigit():
+        return db.session.get(Instructor, int(suffix))
     if user_id.isdigit():
         return db.session.get(AdminUser, int(user_id))
     return None
@@ -68,11 +71,12 @@ def create_app(test_config=None):
     mail.init_app(app)
     limiter.init_app(app)
 
-    from .routes import admin_bp, public_bp, student_bp
+    from .routes import admin_bp, instructor_bp, public_bp, student_bp
 
     app.register_blueprint(public_bp)
     app.register_blueprint(admin_bp, url_prefix="/admin")
     app.register_blueprint(student_bp, url_prefix="/student")
+    app.register_blueprint(instructor_bp)
 
     @app.context_processor
     def inject_context():
@@ -86,11 +90,8 @@ def create_app(test_config=None):
     def not_found(_error):
         return render_template("public/404.html"), 404
 
-    with app.app_context():
-        db.create_all()
-
-    from .seed import seed_initial_data
-    with app.app_context():
-        seed_initial_data()
+    if app.config.get("TESTING") or app.config.get("AUTO_CREATE_DB", False):
+        with app.app_context():
+            db.create_all()
 
     return app

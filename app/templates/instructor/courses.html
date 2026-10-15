@@ -1,0 +1,10 @@
+{% extends 'instructor/base.html' %}
+{% block title %}My courses{% endblock %}
+{% block content %}
+<div class="flex flex-wrap items-end justify-between gap-4"><div><p class="text-xs font-bold uppercase tracking-widest text-blue-700">Course management</p><h1 class="mt-1 text-3xl font-bold">My courses</h1></div><a href="{{ url_for('instructor.course_new') }}" class="rounded-md bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white"><i class="fa-solid fa-plus mr-2"></i>Create new course</a></div>
+<div class="mt-6 overflow-x-auto rounded-md border border-slate-200 bg-white">
+  <table class="w-full min-w-[700px] text-left text-sm"><thead class="bg-slate-50 text-xs uppercase text-slate-500"><tr><th class="p-3">Course</th><th class="p-3">Publication</th><th class="p-3">Review</th><th class="p-3">Students</th><th class="p-3">Actions</th></tr></thead>
+    <tbody class="divide-y divide-slate-100">{% for course in courses %}<tr><td class="p-3"><p class="font-semibold text-slate-900">{{ course.title }}</p><p class="text-xs text-slate-500">{{ course.slug }}</p></td><td class="p-3">{{ course.status|title }}</td><td class="p-3">{{ course.review_status|replace('_',' ')|title }}</td><td class="p-3">{{ course.enrolments|length }}</td><td class="p-3"><a class="font-semibold text-blue-700" href="{{ url_for('instructor.course_edit', course_id=course.id) }}">Edit</a> · <a class="font-semibold text-slate-700" href="{{ url_for('instructor.course_preview', course_id=course.id) }}">Preview</a>{% if course.status == 'published' %}<form method="post" action="{{ url_for('instructor.course_status', course_id=course.id) }}" class="inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="unpublish"><button class="ml-3 text-slate-600">Unpublish</button></form>{% endif %}</td></tr>{% else %}<tr><td colspan="5" class="p-8 text-center text-slate-500">No courses yet. Start with a draft and submit it for review when it is ready.</td></tr>{% endfor %}</tbody>
+  </table>
+</div>
+{% endblock %}

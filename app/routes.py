@@ -3,9 +3,13 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import mimetypes
 import secrets
-from datetime import datetime, timezone
+from io import BytesIO
+from datetime import datetime, timedelta, timezone
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
+from urllib.parse import urlsplit
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 from werkzeug.utils import secure_filename
@@ -26,7 +30,7 @@ from sqlalchemy import or_
 from werkzeug.security import generate_password_hash
 
 from . import csrf, db, limiter, mail
-from .forms import AdminLoginForm, ArticleForm, CompanySettingsForm, ContactForm, CourseForm, ProjectForm, StudentLoginForm, StudentRegistrationForm
+from .forms import AdminLoginForm, AdminRegistrationForm, ArticleForm, CompanySettingsForm, ContactForm, CourseForm, InstructorLoginForm, InstructorRegistrationForm, ProjectForm, StudentLoginForm, StudentRegistrationForm
 from .models import (
     AcademyCertificate,
     AcademyOrder,
@@ -41,6 +45,13 @@ from .models import (
     CourseLesson,
     LessonProgress,
     Enquiry,
+    Instructor,
+    InstructorAuditLog,
+    InstructorEarning,
+    InstructorNotification,
+    InstructorPayoutAllocation,
+    InstructorPayoutRequest,
+    InstructorReversal,
     PaymentEvent,
     Quiz,
     QuizAttempt,
@@ -56,11 +67,125 @@ from . import student_login_manager
 public_bp = Blueprint("public", __name__)
 admin_bp = Blueprint("admin", __name__)
 student_bp = Blueprint("student", __name__)
+instructor_bp = Blueprint("instructor", __name__, url_prefix="/academy/instructor")
+
+
+def create_instructor_notification(instructor, category, message, target_url=None, event_key=None):
+    if event_key and InstructorNotification.query.filter_by(event_key=event_key).first():
+        return None
+    notification = InstructorNotification(
+        instructor=instructor,
+        category=category,
+        message=message,
+        target_url=target_url,
+        event_key=event_key,
+    )
+    db.session.add(notification)
+    return notification
+
+
+def write_instructor_audit(action, target_type, target_id=None, instructor_id=None, admin_id=None, details=None):
+    db.session.add(InstructorAuditLog(
+        instructor_id=instructor_id,
+        admin_id=admin_id,
+        action=action,
+        target_type=target_type,
+        target_id=target_id,
+        details=details,
+    ))
+
+
+def save_public_image(upload, subdirectory):
+    filename = secure_filename(upload.filename or "")
+    extension = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+    if extension not in {"jpg", "jpeg", "png", "webp"}:
+        return None, "Choose a JPG, PNG, or WebP image."
+    image_data = upload.stream.read(5 * 1024 * 1024 + 1)
+    if len(image_data) > 5 * 1024 * 1024:
+        return None, "Images must be 5 MB or smaller."
+    try:
+        from PIL import Image
+
+        image = Image.open(BytesIO(image_data))
+        image.verify()
+    except Exception:
+        return None, "The selected file is not a valid image."
+    directory = Path(current_app.static_folder) / "uploads" / subdirectory
+    directory.mkdir(parents=True, exist_ok=True)
+    stored_name = f"{secrets.token_hex(16)}.{extension}"
+    (directory / stored_name).write_bytes(image_data)
+    return f"/static/uploads/{subdirectory}/{stored_name}", None
+
+
+def sanitize_instructor_html(value):
+    import bleach
+
+    return bleach.clean(
+        value or "",
+        tags={"p", "br", "strong", "b", "em", "i", "ul", "ol", "li", "blockquote", "h2", "h3", "a"},
+        attributes={"a": ["href", "title"]},
+        protocols={"http", "https", "mailto"},
+        strip=True,
+    )
+
+
+def valid_resource_signature(extension, content):
+    signatures = {
+        "pdf": content.startswith(b"%PDF-"),
+        "jpg": content.startswith(b"\xff\xd8\xff"),
+        "jpeg": content.startswith(b"\xff\xd8\xff"),
+        "png": content.startswith(b"\x89PNG\r\n\x1a\n"),
+        "doc": content.startswith(b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"),
+        "ppt": content.startswith(b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"),
+        "docx": content.startswith(b"PK\x03\x04"),
+        "pptx": content.startswith(b"PK\x03\x04"),
+    }
+    return signatures.get(extension, False)
+
+
+def payout_account_cipher():
+    import base64
+    import hashlib
+    from cryptography.fernet import Fernet
+
+    secret = current_app.config.get("SECRET_KEY")
+    if not secret or secret == "dev-secret-key":
+        raise RuntimeError("Set a unique SECRET_KEY before storing payout account details.")
+    key = base64.urlsafe_b64encode(hashlib.sha256(secret.encode("utf-8")).digest())
+    return Fernet(key)
+
+
+def mask_payout_account(encrypted_value):
+    if not encrypted_value:
+        return None
+    value = payout_account_cipher().decrypt(encrypted_value.encode("ascii")).decode("utf-8")
+    return f"******{value[-4:]}"
+def decrypt_payout_account(encrypted_value):
+    if not encrypted_value:
+        return ""
+    return payout_account_cipher().decrypt(encrypted_value.encode("ascii")).decode("utf-8")
+
+
+@instructor_bp.before_request
+def require_instructor():
+    public_endpoints = {"instructor.register", "instructor.login"}
+    if request.endpoint in public_endpoints:
+        if current_user.is_authenticated and not isinstance(current_user, Instructor):
+            abort(403)
+        return None
+    if not current_user.is_authenticated:
+        return redirect(url_for("instructor.login", next=request.url))
+    if request.endpoint == "instructor.lesson_material" and isinstance(current_user, Student):
+        return None
+    if not isinstance(current_user, Instructor):
+        abort(403)
+    if current_user.status != "approved" and request.endpoint not in {"instructor.dashboard", "instructor.logout", "instructor.profile"}:
+        abort(403)
 
 
 @admin_bp.before_request
 def restrict_admin_area():
-    if request.endpoint == "admin.admin_login":
+    if request.endpoint in {"admin.admin_login", "admin.admin_signup"}:
         return None
     if not isinstance(current_user, AdminUser):
         if not current_user.is_authenticated:
@@ -213,10 +338,13 @@ def verify_paystack_payment(reference):
 
 
 def complete_paid_order(order, gateway_data):
+    if order.status == "refunded":
+        return False
     expected_amount = int(round(order.amount * 100))
     if gateway_data.get("reference") != order.reference or gateway_data.get("amount") != expected_amount or gateway_data.get("currency", "").upper() != order.currency.upper():
         current_app.logger.warning("Paystack amount/currency mismatch for order %s", order.reference)
         return False
+    was_paid = order.status == "paid"
     order.status = "paid"
     order.provider_reference = gateway_data.get("reference") or order.provider_reference
     notification = None
@@ -232,30 +360,90 @@ def complete_paid_order(order, gateway_data):
         else:
             enrolment = CourseEnrollment(student_id=order.student_id, course_id=course.id, order_id=order.id, status="active", progress=0.0, source="purchase")
             db.session.add(enrolment)
+        if course.instructor_id:
+            record_instructor_earning(order, course, gateway_data)
+            create_instructor_notification(
+                course.instructor,
+                "enrollment",
+                f"A paid enrollment was confirmed for {course.title}.",
+                url_for("instructor.students"),
+                f"paid-enrollment-{order.id}",
+            )
         notification = ("Axiom Academy course enrollment confirmed", order.student.email, f"Payment confirmed for {course.title}. Your course is ready in your student dashboard.")
     elif order.item_type == "product":
         product = db.session.get(AcademyProduct, order.item_id)
         if not product:
             return False
         notification = ("Axiom Academy resource purchase confirmed", order.student.email, f"Payment confirmed for {product.title}. Sign in to your dashboard to download your resource.")
-    db.session.add(PaymentEvent(
-        order=order,
-        provider="paystack",
-        event_type="charge.success",
-        status="verified",
-        payload=json.dumps({"reference": gateway_data.get("reference"), "amount": gateway_data.get("amount"), "currency": gateway_data.get("currency")}),
-    ))
+    if not was_paid:
+        db.session.add(PaymentEvent(
+            order=order,
+            provider="paystack",
+            event_type="charge.success",
+            status="verified",
+            payload=json.dumps({"reference": gateway_data.get("reference"), "amount": gateway_data.get("amount"), "currency": gateway_data.get("currency")}),
+        ))
     db.session.commit()
     if notification:
         send_academy_notice(notification[0], [notification[1]], notification[2])
     return True
 
 
+def record_instructor_earning(order, course, gateway_data=None):
+    if not course.instructor_id or InstructorEarning.query.filter_by(order_id=order.id).first():
+        return None
+    settings = CompanySettings.query.order_by(CompanySettings.id.desc()).first()
+    commission_percent = settings.academy_commission_percent if settings else None
+    if commission_percent is None or not 0 <= commission_percent <= 100:
+        return None
+    gross_kobo = int((Decimal(str(order.amount)) * 100).quantize(Decimal("1")))
+    fees_kobo = max(0, int(gateway_data.get("fees") or 0)) if gateway_data else 0
+    commission_kobo = int((Decimal(gross_kobo) * Decimal(str(commission_percent)) / 100).quantize(Decimal("1")))
+    share_kobo = max(0, gross_kobo - fees_kobo - commission_kobo)
+    earning = InstructorEarning(
+        instructor_id=course.instructor_id,
+        order_id=order.id,
+        gross_kobo=gross_kobo,
+        gateway_fee_kobo=fees_kobo,
+        commission_kobo=commission_kobo,
+        instructor_share_kobo=share_kobo,
+    )
+    db.session.add(earning)
+    return earning
+
+
+def reverse_instructor_earning(order, reason=None):
+    earning = InstructorEarning.query.filter_by(order_id=order.id).first()
+    if not earning or InstructorReversal.query.filter_by(order_id=order.id).first():
+        return None
+    if earning.payout_status != "available":
+        return None
+    reversal = InstructorReversal(
+        order_id=order.id,
+        instructor_id=earning.instructor_id,
+        gross_reversed_kobo=earning.gross_kobo,
+        commission_reversed_kobo=earning.commission_kobo,
+        instructor_share_reversed_kobo=earning.instructor_share_kobo,
+        reason=(reason or "Payment reversed")[:2000],
+    )
+    earning.payout_status = "reversed"
+    db.session.add(reversal)
+    create_instructor_notification(
+        earning.instructor,
+        "reversal",
+        f"A payment for order {order.reference} was reversed.",
+        url_for("instructor.earnings"),
+        f"order-reversal-{order.id}",
+    )
+    write_instructor_audit("payment_reversed", "order", order.id, instructor_id=earning.instructor_id, details=reason)
+    return reversal
+
+
 def award_course_certificate(enrolment):
     course = enrolment.course
     if not course.certificate_eligible or enrolment.progress < 100:
         return None
-    certificate = AcademyCertificate.query.filter_by(student_id=enrolment.student_id, course_id=course.id).first()
+    certificate = AcademyCertificate.query.filter_by(student_id=enrolment.student_id, course_id=course.id, certificate_type="completion").first()
     if certificate:
         return certificate
     certificate = AcademyCertificate(
@@ -263,6 +451,7 @@ def award_course_certificate(enrolment):
         course_id=course.id,
         certificate_number=f"AXM-{course.id}-{secrets.token_hex(5).upper()}",
         verification_code=secrets.token_urlsafe(12),
+            certificate_type="completion",
     )
     db.session.add(certificate)
     db.session.commit()
@@ -345,9 +534,14 @@ def verify_certificate():
     result = None
     if request.method == "POST":
         code = request.form.get("code", "").strip()
-        cert = AcademyCertificate.query.filter_by(verification_code=code).first()
-        if cert:
+        cert = AcademyCertificate.query.filter(
+            (AcademyCertificate.verification_code == code)
+            | (AcademyCertificate.certificate_number == code)
+        ).first()
+        if cert and cert.status == "issued":
             result = "valid"
+        elif cert and cert.status == "revoked":
+            result = "revoked"
         else:
             result = "invalid"
     return render_template("public/certificate_verify.html", cert=cert, result=result)
@@ -653,14 +847,43 @@ def checkout_course(course_id):
     if existing_enrolment and existing_enrolment.status == "active":
         flash("You are already enrolled in this course.", "error")
         return redirect(url_for("student.dashboard"))
-    order = AcademyOrder.query.filter_by(student_id=current_user.id, item_type="course", item_id=course.id).filter(AcademyOrder.status.in_(["awaiting_receipt", "receipt_submitted", "rejected"])).order_by(AcademyOrder.created_at.desc()).first()
+    if course.is_free:
+        enrolment = existing_enrolment or CourseEnrollment(
+            student_id=current_user.id,
+            course_id=course.id,
+            status="active",
+            progress=0.0,
+            source="free",
+        )
+        enrolment.status = "active"
+        enrolment.source = "free"
+        db.session.add(enrolment)
+        if course.instructor:
+            create_instructor_notification(
+                course.instructor,
+                "enrollment",
+                f"A student enrolled in your free course, {course.title}.",
+                url_for("instructor.students"),
+                f"free-enrollment-{current_user.id}-{course.id}",
+            )
+        db.session.commit()
+        flash("You are enrolled. The course is ready in your dashboard.", "success")
+        return redirect(url_for("student.student_course_detail", slug=course.slug))
+    order = AcademyOrder.query.filter_by(student_id=current_user.id, item_type="course", item_id=course.id).filter(AcademyOrder.status.in_(["pending", "awaiting_receipt", "receipt_submitted", "rejected"])).order_by(AcademyOrder.created_at.desc()).first()
     if not order:
         order = AcademyOrder(
             student_id=current_user.id, item_type="course", item_id=course.id,
-            amount=course.price, currency=course.currency, status="awaiting_receipt",
+            amount=course.price, currency=course.currency,
+            status="pending" if current_app.config.get("PAYSTACK_SECRET_KEY") else "awaiting_receipt",
             reference=f"AXM-{secrets.token_hex(12).upper()}",
         )
         db.session.add(order)
+        db.session.commit()
+    if current_app.config.get("PAYSTACK_SECRET_KEY") and order.status in {"pending", "awaiting_receipt"}:
+        authorization_url = initialize_paystack_payment(order)
+        if authorization_url:
+            return redirect(authorization_url)
+        order.status = "awaiting_receipt"
         db.session.commit()
     return redirect(url_for("student.submit_course_receipt", order_id=order.id))
 
@@ -835,6 +1058,1065 @@ def sitemap_xml():
     return body, 200, {"Content-Type": "application/xml"}
 
 
+@instructor_bp.route("/register", methods=["GET", "POST"])
+def register():
+    form = InstructorRegistrationForm()
+    if form.validate_on_submit():
+        email = form.email.data.strip().lower()
+        if (Instructor.query.filter_by(email=email).first()
+                or Student.query.filter_by(email=email).first()
+                or AdminUser.query.filter_by(email=email).first()):
+            form.email.errors.append("An account with this email already exists.")
+        else:
+            photo_url = None
+            photo_upload = request.files.get("profile_photo")
+            if photo_upload and photo_upload.filename:
+                photo_url, upload_error = save_public_image(photo_upload, "instructor-profiles")
+                if upload_error:
+                    flash(upload_error, "error")
+                    return render_template("instructor/register.html", form=form)
+            instructor = Instructor(
+                full_name=form.full_name.data.strip(),
+                email=email,
+                phone=form.phone.data.strip() or None,
+                professional_title=form.professional_title.data.strip(),
+                biography=form.biography.data.strip(),
+                teaching_experience=form.teaching_experience.data.strip() or None,
+                qualifications=form.qualifications.data.strip() or None,
+                subject_areas=form.subject_areas.data.strip(),
+                profile_photo=photo_url,
+                terms_accepted_at=datetime.now(timezone.utc),
+            )
+            instructor.set_password(form.password.data)
+            db.session.add(instructor)
+            db.session.flush()
+            write_instructor_audit("application_submitted", "instructor", instructor.id, instructor_id=instructor.id)
+            db.session.commit()
+            send_academy_notice(
+                "New Axiom Academy instructor application",
+                [get_admin_notification_recipient()],
+                f"Instructor application submitted by {instructor.full_name} ({instructor.email}). Review it in the admin instructor portal.",
+            )
+            login_user(instructor, remember=True)
+            flash("Your instructor application is submitted and awaiting review.", "success")
+            return redirect(url_for("instructor.dashboard"))
+    return render_template("instructor/register.html", form=form)
+
+
+@instructor_bp.route("/login", methods=["GET", "POST"])
+def login():
+    form = InstructorLoginForm()
+    if form.validate_on_submit():
+        instructor = Instructor.query.filter_by(email=form.email.data.strip().lower()).first()
+        if instructor and instructor.check_password(form.password.data) and instructor.status not in {"rejected", "suspended"}:
+            login_user(instructor, remember=form.remember.data)
+            instructor.last_login_at = datetime.now(timezone.utc)
+            db.session.commit()
+            return redirect(url_for("instructor.dashboard"))
+        flash("Invalid instructor login credentials.", "error")
+    return render_template("instructor/login.html", form=form)
+
+
+@instructor_bp.route("/logout")
+@login_required
+def logout():
+    if not isinstance(current_user, Instructor):
+        abort(403)
+    logout_user()
+    return redirect(url_for("public.academy_home"))
+
+
+@instructor_bp.route("/profile", methods=["GET", "POST"])
+@login_required
+def profile():
+    if request.method == "POST":
+        full_name = request.form.get("full_name", "").strip()[:160]
+        email = request.form.get("email", "").strip().lower()[:160]
+        if not full_name or not email:
+            flash("Full name and email are required.", "error")
+        elif (
+            Instructor.query.filter(Instructor.email == email, Instructor.id != current_user.id).first()
+            or Student.query.filter_by(email=email).first()
+            or AdminUser.query.filter_by(email=email).first()
+        ):
+            flash("That email address is already assigned to another account.", "error")
+        else:
+            current_user.full_name = full_name
+            current_user.email = email
+            current_user.phone = request.form.get("phone", "").strip()[:60] or None
+            current_user.professional_title = request.form.get("professional_title", "").strip()[:160]
+            current_user.biography = request.form.get("biography", "").strip()[:3000]
+            current_user.teaching_experience = request.form.get("teaching_experience", "").strip()[:3000] or None
+            current_user.qualifications = request.form.get("qualifications", "").strip()[:3000] or None
+            current_user.subject_areas = request.form.get("subject_areas", "").strip()[:2000]
+            photo_upload = request.files.get("profile_photo")
+            if photo_upload and photo_upload.filename:
+                photo_url, upload_error = save_public_image(photo_upload, "instructor-profiles")
+                if upload_error:
+                    flash(upload_error, "error")
+                    return render_template("instructor/profile.html", instructor=current_user)
+                current_user.profile_photo = photo_url
+            write_instructor_audit("profile_updated", "instructor", current_user.id, instructor_id=current_user.id)
+            db.session.commit()
+            flash("Profile updated.", "success")
+            return redirect(url_for("instructor.profile"))
+    return render_template("instructor/profile.html", instructor=current_user)
+
+
+@instructor_bp.route("/dashboard")
+@login_required
+def dashboard():
+    if not isinstance(current_user, Instructor):
+        abort(403)
+    if current_user.status != "approved":
+        return render_template("instructor/pending.html", instructor=current_user)
+    courses = Course.query.filter_by(instructor_id=current_user.id).all()
+    course_ids = [course.id for course in courses]
+    enrollments = CourseEnrollment.query.filter(CourseEnrollment.course_id.in_(course_ids)).all() if course_ids else []
+    earnings = InstructorEarning.query.filter_by(instructor_id=current_user.id).all()
+    reversals = InstructorReversal.query.filter_by(instructor_id=current_user.id).all()
+    paid_orders = AcademyOrder.query.filter(
+        AcademyOrder.item_type == "course",
+        AcademyOrder.item_id.in_(course_ids),
+        AcademyOrder.status == "paid",
+    ).all() if course_ids else []
+    recent_enrollments = sorted(enrollments, key=lambda item: item.created_at, reverse=True)[:8]
+    recent_orders = AcademyOrder.query.filter(AcademyOrder.item_type == "course", AcademyOrder.item_id.in_(course_ids)).order_by(AcademyOrder.created_at.desc()).limit(8).all() if course_ids else []
+    unread_count = InstructorNotification.query.filter_by(instructor_id=current_user.id, is_read=False).count()
+    metrics = {
+        "courses": len(courses),
+        "published": sum(course.status == "published" for course in courses),
+        "drafts": sum(course.status == "draft" for course in courses),
+        "awaiting_review": sum(course.review_status == "submitted" for course in courses),
+        "enrollments": len(enrollments),
+        "new_students": len({item.student_id for item in enrollments if item.created_at and (datetime.now(timezone.utc).replace(tzinfo=None) - item.created_at.replace(tzinfo=None)).days < 30}),
+        "gross_sales_kobo": sum(int((Decimal(str(order.amount)) * 100).quantize(Decimal("1"))) for order in paid_orders),
+        "earnings_kobo": sum(item.instructor_share_kobo for item in earnings) - sum(item.instructor_share_reversed_kobo for item in reversals),
+        "pending_payouts_kobo": sum(item.amount_kobo for item in InstructorPayoutRequest.query.filter(InstructorPayoutRequest.instructor_id == current_user.id, InstructorPayoutRequest.status.in_(["pending", "approved"])).all()),
+        "completed_payouts_kobo": sum(item.amount_kobo for item in InstructorPayoutRequest.query.filter_by(instructor_id=current_user.id, status="paid").all()),
+        "unread_notifications": unread_count,
+    }
+    notifications = InstructorNotification.query.filter_by(instructor_id=current_user.id).order_by(InstructorNotification.created_at.desc()).limit(5).all()
+    return render_template("instructor/dashboard.html", metrics=metrics, courses=courses, recent_enrollments=recent_enrollments, recent_orders=recent_orders, notifications=notifications)
+
+
+def instructor_owned_course(course_id):
+    return Course.query.filter_by(id=course_id, instructor_id=current_user.id).first_or_404()
+
+
+@instructor_bp.route("/courses")
+@login_required
+def courses():
+    course_list = Course.query.filter_by(instructor_id=current_user.id).order_by(Course.updated_at.desc()).all()
+    return render_template("instructor/courses.html", courses=course_list)
+
+
+@instructor_bp.route("/courses/new", methods=["GET", "POST"])
+@login_required
+def course_new():
+    categories = CourseCategory.query.order_by(CourseCategory.name.asc()).all()
+    if request.method == "POST":
+        title = request.form.get("title", "").strip()[:200]
+        slug = slugify(request.form.get("slug", "") or title).strip("-")[:200]
+        short_description = request.form.get("short_description", "").strip()
+        description = request.form.get("description", "").strip()
+        is_free = request.form.get("is_free") == "on"
+        try:
+            price = Decimal("0") if is_free else Decimal(request.form.get("price", ""))
+            duration_hours = int(request.form.get("duration_hours", "1"))
+        except (InvalidOperation, ValueError):
+            price, duration_hours = Decimal("-1"), 0
+        errors = []
+        if len(title) < 3 or not slug or not short_description or not description:
+            errors.append("Title, slug, short description, and course description are required.")
+        if not price.is_finite() or price < 0 or (not is_free and price <= 0):
+            errors.append("Paid courses require a positive price in NGN.")
+        if duration_hours < 1 or duration_hours > 10000:
+            errors.append("Duration must be a positive number of hours.")
+        if Course.query.filter_by(slug=slug).first():
+            errors.append("That course URL is already in use.")
+        if errors:
+            for error in errors:
+                flash(error, "error")
+            return render_template("instructor/course_form.html", course=None, categories=categories)
+        category_id = request.form.get("category_id", type=int)
+        category = db.session.get(CourseCategory, category_id) if category_id else None
+        if category_id and not category:
+            flash("Choose a valid course category.", "error")
+            return render_template("instructor/course_form.html", course=None, categories=categories)
+        cover_image = None
+        cover_upload = request.files.get("cover_image")
+        if cover_upload and cover_upload.filename:
+            cover_image, upload_error = save_public_image(cover_upload, "course-covers")
+            if upload_error:
+                flash(upload_error, "error")
+                return render_template("instructor/course_form.html", course=None, categories=categories)
+        course = Course(
+            title=title,
+            slug=slug,
+            short_description=short_description,
+            description=sanitize_instructor_html(description),
+            cover_image=cover_image,
+            category=category,
+            instructor_id=current_user.id,
+            instructor_name=current_user.full_name,
+            difficulty=request.form.get("difficulty") if request.form.get("difficulty") in {"Beginner", "Intermediate", "Advanced"} else "Beginner",
+            duration_hours=duration_hours,
+            language=request.form.get("language", "English").strip()[:60] or "English",
+            price=float(price),
+            currency="NGN",
+            is_free=is_free,
+            status="draft",
+            review_status="draft",
+            objectives=request.form.get("objectives", "").strip() or None,
+            prerequisites=request.form.get("prerequisites", "").strip() or None,
+            target_audience=request.form.get("target_audience", "").strip() or None,
+            requirements=request.form.get("requirements", "").strip() or None,
+            what_students_learn=request.form.get("what_students_learn", "").strip() or None,
+        )
+        db.session.add(course)
+        db.session.flush()
+        action = request.form.get("action")
+        if action == "submit":
+            if CourseLesson.query.filter_by(course_id=course.id).count() == 0:
+                write_instructor_audit("course_created", "course", course.id, instructor_id=current_user.id)
+                db.session.commit()
+                flash("Add at least one lesson before submitting the course for review.", "error")
+                return redirect(url_for("instructor.course_edit", course_id=course.id))
+            course.review_status = "submitted"
+            create_instructor_notification(current_user, "course", f"Course submitted for review: {course.title}", url_for("instructor.courses"), f"course-submitted-{course.id}")
+        write_instructor_audit("course_created", "course", course.id, instructor_id=current_user.id)
+        db.session.commit()
+        if action == "submit":
+            send_academy_notice("Axiom Academy course submitted for review", [get_admin_notification_recipient()], f"{current_user.full_name} submitted '{course.title}' for review.")
+        flash("Course saved as a draft." if action != "submit" else "Course submitted for admin review.", "success")
+        return redirect(url_for("instructor.courses"))
+    return render_template("instructor/course_form.html", course=None, categories=categories)
+
+
+@instructor_bp.route("/courses/<int:course_id>/edit", methods=["GET", "POST"])
+@login_required
+def course_edit(course_id):
+    course = instructor_owned_course(course_id)
+    categories = CourseCategory.query.order_by(CourseCategory.name.asc()).all()
+    if request.method == "POST":
+        title = request.form.get("title", "").strip()[:200]
+        slug = slugify(request.form.get("slug", "") or title).strip("-")[:200]
+        try:
+            is_free = request.form.get("is_free") == "on"
+            price = Decimal("0") if is_free else Decimal(request.form.get("price", ""))
+            duration_hours = int(request.form.get("duration_hours", "1"))
+        except (InvalidOperation, ValueError):
+            flash("Enter a valid price and course duration.", "error")
+            return render_template("instructor/course_form.html", course=course, categories=categories)
+        duplicate = Course.query.filter(Course.slug == slug, Course.id != course.id).first()
+        if duplicate or not title or not price.is_finite() or price < 0 or (not is_free and price <= 0) or duration_hours < 1:
+            flash("Check the title, unique URL, positive paid price, and course duration.", "error")
+            return render_template("instructor/course_form.html", course=course, categories=categories)
+        category_id = request.form.get("category_id", type=int)
+        category = db.session.get(CourseCategory, category_id) if category_id else None
+        if category_id and not category:
+            flash("Choose a valid course category.", "error")
+            return render_template("instructor/course_form.html", course=course, categories=categories)
+        cover_upload = request.files.get("cover_image")
+        if cover_upload and cover_upload.filename:
+            cover_image, upload_error = save_public_image(cover_upload, "course-covers")
+            if upload_error:
+                flash(upload_error, "error")
+                return render_template("instructor/course_form.html", course=course, categories=categories)
+            course.cover_image = cover_image
+        course.title = title
+        course.slug = slug
+        course.short_description = request.form.get("short_description", "").strip()
+        course.description = sanitize_instructor_html(request.form.get("description", "").strip())
+        course.category = category
+        course.instructor_name = current_user.full_name
+        course.difficulty = request.form.get("difficulty") if request.form.get("difficulty") in {"Beginner", "Intermediate", "Advanced"} else "Beginner"
+        course.duration_hours = duration_hours
+        course.language = request.form.get("language", "English").strip()[:60] or "English"
+        course.price = float(price)
+        course.currency = "NGN"
+        course.is_free = is_free
+        course.objectives = request.form.get("objectives", "").strip() or None
+        course.prerequisites = request.form.get("prerequisites", "").strip() or None
+        course.target_audience = request.form.get("target_audience", "").strip() or None
+        course.requirements = request.form.get("requirements", "").strip() or None
+        course.what_students_learn = request.form.get("what_students_learn", "").strip() or None
+        action = request.form.get("action")
+        course.status = "draft"
+        course.review_status = "draft"
+        course.published_at = None
+        if action == "submit":
+            if not course.short_description or not course.description:
+                flash("A short and full description are required before review.", "error")
+                return render_template("instructor/course_form.html", course=course, categories=categories)
+            if CourseLesson.query.filter_by(course_id=course.id).count() == 0:
+                flash("Add at least one lesson before submitting the course for review.", "error")
+                return render_template("instructor/course_form.html", course=course, categories=categories)
+            course.status = "draft"
+            course.review_status = "submitted"
+            create_instructor_notification(current_user, "course", f"Course submitted for review: {course.title}", url_for("instructor.courses"), f"course-submitted-{course.id}-{int(datetime.now(timezone.utc).timestamp())}")
+        write_instructor_audit("course_updated", "course", course.id, instructor_id=current_user.id)
+        db.session.commit()
+        if action == "submit":
+            send_academy_notice("Axiom Academy course submitted for review", [get_admin_notification_recipient()], f"{current_user.full_name} submitted '{course.title}' for review.")
+        flash("Course submitted for review." if action == "submit" else "Course draft updated.", "success")
+        return redirect(url_for("instructor.courses"))
+    return render_template("instructor/course_form.html", course=course, categories=categories)
+
+
+@instructor_bp.route("/courses/<int:course_id>/preview")
+@login_required
+def course_preview(course_id):
+    course = instructor_owned_course(course_id)
+    lessons = CourseLesson.query.filter_by(course_id=course.id).order_by(CourseLesson.order_index.asc(), CourseLesson.id.asc()).all()
+    return render_template("instructor/course_preview.html", course=course, lessons=lessons)
+
+
+@instructor_bp.route("/courses/<int:course_id>/status", methods=["POST"])
+@login_required
+def course_status(course_id):
+    course = instructor_owned_course(course_id)
+    action = request.form.get("action")
+    if action == "unpublish" and course.status == "published":
+        course.status = "draft"
+        course.review_status = "draft"
+        write_instructor_audit("course_unpublished", "course", course.id, instructor_id=current_user.id)
+    elif action == "archive":
+        course.status = "archived"
+        course.review_status = "archived"
+        write_instructor_audit("course_archived", "course", course.id, instructor_id=current_user.id)
+    else:
+        abort(400)
+    db.session.commit()
+    flash("Course status updated.", "success")
+    return redirect(url_for("instructor.courses"))
+
+
+@instructor_bp.route("/courses/<int:course_id>/lessons", methods=["POST"])
+@login_required
+def lesson_create(course_id):
+    course = instructor_owned_course(course_id)
+    title = request.form.get("title", "").strip()[:200]
+    content = request.form.get("content", "").strip()
+    lesson_slug = slugify(request.form.get("slug", "") or title).strip("-")[:200]
+    lesson_type = request.form.get("lesson_type", "text")
+    try:
+        duration_minutes = max(1, min(1440, int(request.form.get("duration_minutes", "15"))))
+        order_index = max(0, int(request.form.get("order_index", "0")))
+    except ValueError:
+        flash("Lesson duration and order must be whole numbers.", "error")
+        return redirect(url_for("instructor.course_edit", course_id=course.id))
+    upload = request.files.get("resource")
+    allowed = {"pdf", "ppt", "pptx", "doc", "docx", "jpg", "jpeg", "png"}
+    resource_path = None
+    resource_filename = None
+    if upload and upload.filename:
+        filename = secure_filename(upload.filename)
+        extension = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+        if extension not in allowed:
+            flash("Allowed lesson resources are PDF, PowerPoint, Word, JPG, or PNG files.", "error")
+            return redirect(url_for("instructor.course_edit", course_id=course.id))
+        resource_bytes = upload.stream.read(16 * 1024 * 1024 + 1)
+        if len(resource_bytes) > 16 * 1024 * 1024 or not valid_resource_signature(extension, resource_bytes[:16]):
+            flash("The resource file is too large or does not match its file type.", "error")
+            return redirect(url_for("instructor.course_edit", course_id=course.id))
+        root = get_private_academy_upload_root() / "instructor_materials" / str(current_user.id)
+        root.mkdir(parents=True, exist_ok=True)
+        stored = f"{secrets.token_hex(16)}.{extension}"
+        (root / stored).write_bytes(resource_bytes)
+        resource_path = f"instructor_materials/{current_user.id}/{stored}"
+        resource_filename = filename
+    if not title or not (content or request.form.get("external_video_url", "").strip() or resource_path):
+        flash("Provide a lesson title and lesson content, video link, or resource file.", "error")
+        return redirect(url_for("instructor.course_edit", course_id=course.id))
+    if lesson_type not in {"text", "video"} or CourseLesson.query.filter_by(course_id=course.id, slug=lesson_slug).first():
+        flash("Choose a valid lesson type and unique lesson URL.", "error")
+        return redirect(url_for("instructor.course_edit", course_id=course.id))
+    external_video_url = request.form.get("external_video_url", "").strip() or None
+    if external_video_url:
+        parsed_video_url = urlsplit(external_video_url)
+        if parsed_video_url.scheme not in {"http", "https"} or not parsed_video_url.netloc:
+            flash("Video links must use a valid HTTP or HTTPS URL.", "error")
+            return redirect(url_for("instructor.course_edit", course_id=course.id))
+    lesson = CourseLesson(
+        course=course,
+        title=title,
+        slug=lesson_slug,
+        lesson_type=lesson_type,
+        content=sanitize_instructor_html(content) or None,
+        external_video_url=external_video_url,
+        module_title=request.form.get("module_title", "").strip()[:160] or None,
+        resource_path=resource_path,
+        resource_filename=resource_filename,
+        duration_minutes=duration_minutes,
+        order_index=order_index,
+        is_preview=request.form.get("is_preview") == "on",
+        status="draft",
+    )
+    db.session.add(lesson)
+    course.status = "draft"
+    course.review_status = "draft"
+    course.published_at = None
+    write_instructor_audit("lesson_created", "lesson", None, instructor_id=current_user.id, details=course.title)
+    db.session.commit()
+    flash("Lesson saved as a draft.", "success")
+    return redirect(url_for("instructor.course_edit", course_id=course.id))
+
+
+@instructor_bp.route("/courses/<int:course_id>/lessons/<int:lesson_id>/edit", methods=["POST"])
+@login_required
+def lesson_edit(course_id, lesson_id):
+    course = instructor_owned_course(course_id)
+    lesson = CourseLesson.query.filter_by(id=lesson_id, course_id=course.id).first_or_404()
+    title = request.form.get("title", "").strip()[:200]
+    slug = slugify(request.form.get("slug", "") or title).strip("-")[:200]
+    try:
+        lesson.order_index = max(0, int(request.form.get("order_index", lesson.order_index)))
+        lesson.duration_minutes = max(1, min(1440, int(request.form.get("duration_minutes", lesson.duration_minutes))))
+    except ValueError:
+        flash("Lesson duration and order must be whole numbers.", "error")
+        return redirect(url_for("instructor.course_edit", course_id=course.id))
+    duplicate = CourseLesson.query.filter(CourseLesson.course_id == course.id, CourseLesson.slug == slug, CourseLesson.id != lesson.id).first()
+    if not title or duplicate:
+        flash("Lesson title is required and its URL must be unique in this course.", "error")
+        return redirect(url_for("instructor.course_edit", course_id=course.id))
+    lesson.title = title
+    lesson.slug = slug
+    lesson.module_title = request.form.get("module_title", "").strip()[:160] or None
+    lesson.content = sanitize_instructor_html(request.form.get("content", "").strip()) or None
+    lesson.is_preview = request.form.get("is_preview") == "on"
+    video_url = request.form.get("external_video_url", "").strip() or None
+    if video_url:
+        parsed_video_url = urlsplit(video_url)
+        if parsed_video_url.scheme not in {"http", "https"} or not parsed_video_url.netloc:
+            flash("Video links must use a valid HTTP or HTTPS URL.", "error")
+            return redirect(url_for("instructor.course_edit", course_id=course.id))
+    lesson.external_video_url = video_url
+    lesson.lesson_type = request.form.get("lesson_type") if request.form.get("lesson_type") in {"text", "video"} else "text"
+    upload = request.files.get("resource")
+    if upload and upload.filename:
+        filename = secure_filename(upload.filename)
+        extension = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+        if extension not in {"pdf", "ppt", "pptx", "doc", "docx", "jpg", "jpeg", "png"}:
+            flash("Choose a supported course resource file.", "error")
+            return redirect(url_for("instructor.course_edit", course_id=course.id))
+        resource_bytes = upload.stream.read(16 * 1024 * 1024 + 1)
+        if len(resource_bytes) > 16 * 1024 * 1024 or not valid_resource_signature(extension, resource_bytes[:16]):
+            flash("The resource file is too large or does not match its file type.", "error")
+            return redirect(url_for("instructor.course_edit", course_id=course.id))
+        root = get_private_academy_upload_root() / "instructor_materials" / str(current_user.id)
+        root.mkdir(parents=True, exist_ok=True)
+        stored = f"{secrets.token_hex(16)}.{extension}"
+        (root / stored).write_bytes(resource_bytes)
+        lesson.resource_path = f"instructor_materials/{current_user.id}/{stored}"
+        lesson.resource_filename = filename
+        course.status = "draft"
+        course.review_status = "draft"
+        course.published_at = None
+    write_instructor_audit("lesson_updated", "lesson", lesson.id, instructor_id=current_user.id)
+    db.session.commit()
+    flash("Lesson updated.", "success")
+    return redirect(url_for("instructor.course_edit", course_id=course.id))
+
+
+@instructor_bp.route("/courses/<int:course_id>/lessons/<int:lesson_id>/delete", methods=["POST"])
+@login_required
+def lesson_delete(course_id, lesson_id):
+    course = instructor_owned_course(course_id)
+    lesson = CourseLesson.query.filter_by(id=lesson_id, course_id=course.id).first_or_404()
+    if LessonProgress.query.filter_by(lesson_id=lesson.id).count() or Quiz.query.filter_by(lesson_id=lesson.id).count():
+        flash("This lesson is referenced by student progress or an assessment and cannot be deleted.", "error")
+        return redirect(url_for("instructor.course_edit", course_id=course.id))
+    if lesson.resource_path:
+        root = get_private_academy_upload_root().resolve()
+        file_path = (root / lesson.resource_path).resolve()
+        try:
+            file_path.relative_to(root)
+        except ValueError:
+            abort(404)
+        file_path.unlink(missing_ok=True)
+    lesson_id_value = lesson.id
+    db.session.delete(lesson)
+    course.status = "draft"
+    course.review_status = "draft"
+    course.published_at = None
+    write_instructor_audit("lesson_deleted", "lesson", lesson_id_value, instructor_id=current_user.id)
+    db.session.commit()
+    flash("Lesson deleted.", "success")
+    return redirect(url_for("instructor.course_edit", course_id=course.id))
+
+
+@instructor_bp.route("/courses/<int:course_id>/quizzes", methods=["POST"])
+@login_required
+def quiz_create(course_id):
+    course = instructor_owned_course(course_id)
+    title = request.form.get("title", "").strip()[:200]
+    if not title:
+        flash("Assessment title is required.", "error")
+        return redirect(url_for("instructor.course_edit", course_id=course.id))
+    try:
+        pass_mark = min(100.0, max(0.0, float(request.form.get("pass_mark", "70"))))
+        attempt_limit = min(20, max(1, int(request.form.get("attempt_limit", "3"))))
+    except ValueError:
+        flash("Enter a valid pass mark and attempt limit.", "error")
+        return redirect(url_for("instructor.course_edit", course_id=course.id))
+    quiz = Quiz(course_id=course.id, title=title, instructions=request.form.get("instructions", "").strip() or None, pass_mark=pass_mark, attempt_limit=attempt_limit, status="draft")
+    question_count = 0
+    for index in range(1, 11):
+        prompt = request.form.get(f"prompt_{index}", "").strip()
+        if not prompt:
+            continue
+        options = [request.form.get(f"option_{index}_{letter}", "").strip() for letter in "abcd"]
+        correct = request.form.get(f"correct_{index}", "")
+        if sum(bool(option) for option in options) < 2 or correct not in {"a", "b", "c", "d"} or not options[ord(correct) - ord("a")]:
+            flash(f"Question {index} requires two choices and one valid correct answer.", "error")
+            return redirect(url_for("instructor.course_edit", course_id=course.id))
+        question = QuizQuestion(prompt=prompt[:4000], points=1.0, order_index=index)
+        quiz.questions.append(question)
+        for option_index, option_text in enumerate(options):
+            if option_text:
+                question.options.append(QuizOption(option_text=option_text[:1000], is_correct=chr(ord("a") + option_index) == correct))
+        question_count += 1
+    if not question_count:
+        flash("Add at least one assessment question.", "error")
+        return redirect(url_for("instructor.course_edit", course_id=course.id))
+    db.session.add(quiz)
+    db.session.flush()
+    write_instructor_audit("quiz_created", "quiz", quiz.id, instructor_id=current_user.id, details=course.title)
+    db.session.commit()
+    flash("Assessment saved as a draft. It will publish with the approved course.", "success")
+    return redirect(url_for("instructor.course_edit", course_id=course.id))
+
+
+@instructor_bp.route("/courses/<int:course_id>/materials/<int:lesson_id>")
+@login_required
+def lesson_material(course_id, lesson_id):
+    course = Course.query.filter_by(id=course_id).first_or_404()
+    lesson = CourseLesson.query.filter_by(id=lesson_id, course_id=course.id).first_or_404()
+    instructor_access = isinstance(current_user, Instructor) and course.instructor_id == current_user.id and current_user.status == "approved"
+    student_access = isinstance(current_user, Student) and lesson.status == "published" and CourseEnrollment.query.filter_by(student_id=current_user.id, course_id=course.id, status="active").first() is not None
+    if not (instructor_access or student_access) or not lesson.resource_path:
+        abort(404)
+    root = get_private_academy_upload_root().resolve()
+    path = (root / lesson.resource_path).resolve()
+    try:
+        path.relative_to(root)
+    except ValueError:
+        abort(404)
+    if not path.is_file():
+        abort(404)
+    return send_file(path, as_attachment=True, download_name=lesson.resource_filename or path.name, mimetype=mimetypes.guess_type(path.name)[0])
+
+
+@instructor_bp.route("/students")
+@login_required
+def students():
+    course_ids = [course.id for course in Course.query.filter_by(instructor_id=current_user.id).all()]
+    query = CourseEnrollment.query.filter(CourseEnrollment.course_id.in_(course_ids)) if course_ids else CourseEnrollment.query.filter(db.false())
+    course_filter = request.args.get("course", type=int)
+    status_filter = request.args.get("status", "").strip()
+    search = request.args.get("q", "").strip()
+    if course_filter in course_ids:
+        query = query.filter_by(course_id=course_filter)
+    if status_filter in {"active", "completed", "cancelled"}:
+        if status_filter == "completed":
+            query = query.filter(CourseEnrollment.completed_at.isnot(None))
+        elif status_filter == "active":
+            query = query.filter(CourseEnrollment.status == "active", CourseEnrollment.completed_at.is_(None))
+        else:
+            query = query.filter_by(status=status_filter)
+    if search:
+        query = query.join(Student).filter(or_(Student.full_name.ilike(f"%{search}%"), Student.email.ilike(f"%{search}%")))
+    sort = request.args.get("sort", "date")
+    ordering = CourseEnrollment.progress.asc() if sort == "progress_asc" else CourseEnrollment.progress.desc() if sort == "progress_desc" else CourseEnrollment.created_at.asc() if sort == "date_asc" else CourseEnrollment.created_at.desc()
+    enrollments = query.order_by(ordering).paginate(page=request.args.get("page", 1, type=int), per_page=25, error_out=False)
+    instructor_courses = Course.query.filter_by(instructor_id=current_user.id).order_by(Course.title.asc()).all()
+    return render_template("instructor/students.html", enrollments=enrollments, courses=instructor_courses, course_filter=course_filter, status_filter=status_filter, search=search, sort=sort)
+
+
+@instructor_bp.route("/students/<int:enrollment_id>")
+@login_required
+def student_detail(enrollment_id):
+    enrollment = CourseEnrollment.query.join(Course).filter(
+        CourseEnrollment.id == enrollment_id,
+        Course.instructor_id == current_user.id,
+    ).first_or_404()
+    lesson_ids = [lesson.id for lesson in enrollment.course.lessons]
+    quiz_query = Quiz.query.filter(Quiz.course_id == enrollment.course_id)
+    if lesson_ids:
+        quiz_query = quiz_query.union(Quiz.query.filter(Quiz.lesson_id.in_(lesson_ids)))
+    quiz_ids = [quiz.id for quiz in quiz_query.all()]
+    attempts = QuizAttempt.query.filter(
+        QuizAttempt.student_id == enrollment.student_id,
+        QuizAttempt.quiz_id.in_(quiz_ids),
+    ).order_by(QuizAttempt.submitted_at.desc().nullslast()).all() if quiz_ids else []
+    completed_lessons = LessonProgress.query.filter_by(enrolment_id=enrollment.id, completed=True).count()
+    certificates = AcademyCertificate.query.filter_by(student_id=enrollment.student_id, course_id=enrollment.course_id).order_by(AcademyCertificate.issue_date.desc()).all()
+    return render_template(
+        "instructor/student_detail.html",
+        enrollment=enrollment,
+        completed_lessons=completed_lessons,
+        total_lessons=len(lesson_ids),
+        attempts=attempts,
+        certificates=certificates,
+    )
+
+
+@instructor_bp.route("/students/<int:enrollment_id>/admission-certificate", methods=["POST"])
+@login_required
+def issue_admission_certificate(enrollment_id):
+    enrollment = CourseEnrollment.query.join(Course).filter(
+        CourseEnrollment.id == enrollment_id,
+        Course.instructor_id == current_user.id,
+        CourseEnrollment.status == "active",
+    ).first_or_404()
+    existing = AcademyCertificate.query.filter_by(
+        student_id=enrollment.student_id,
+        course_id=enrollment.course_id,
+        certificate_type="admission",
+        status="issued",
+    ).first()
+    if existing:
+        return redirect(url_for("instructor.certificate_pdf", certificate_id=existing.id))
+    certificate = AcademyCertificate(
+        student_id=enrollment.student_id,
+        course_id=enrollment.course_id,
+        certificate_number=f"AXM-ADM-{secrets.token_hex(6).upper()}",
+        verification_code=secrets.token_urlsafe(16),
+        certificate_type="admission",
+        status="issued",
+        issued_by_instructor_id=current_user.id,
+    )
+    db.session.add(certificate)
+    db.session.flush()
+    write_instructor_audit("admission_certificate_issued", "certificate", certificate.id, instructor_id=current_user.id, details=f"Enrollment {enrollment.id}")
+    create_instructor_notification(current_user, "certificate", f"Admission certificate issued for {enrollment.student.full_name}.", url_for("instructor.certificates"), f"admission-certificate-{certificate.id}")
+    db.session.commit()
+    send_academy_notice("Axiom Academy admission certificate", [enrollment.student.email], f"Your admission certificate for {enrollment.course.title} is available. Verification code: {certificate.verification_code}")
+    flash("Admission certificate issued.", "success")
+    return redirect(url_for("instructor.certificate_pdf", certificate_id=certificate.id))
+
+
+@instructor_bp.route("/certificates")
+@login_required
+def certificates():
+    course_ids = [course.id for course in Course.query.filter_by(instructor_id=current_user.id).all()]
+    items = AcademyCertificate.query.filter(AcademyCertificate.course_id.in_(course_ids)).order_by(AcademyCertificate.issue_date.desc()).all() if course_ids else []
+    return render_template("instructor/certificates.html", certificates=items)
+
+
+@instructor_bp.route("/certificates/<int:certificate_id>.pdf")
+@login_required
+def certificate_pdf(certificate_id):
+    certificate = AcademyCertificate.query.join(Course).filter(
+        AcademyCertificate.id == certificate_id,
+        Course.instructor_id == current_user.id,
+        AcademyCertificate.status == "issued",
+    ).first_or_404()
+    from reportlab.lib.pagesizes import landscape, letter
+    from reportlab.pdfgen import canvas
+
+    output = BytesIO()
+    page = canvas.Canvas(output, pagesize=landscape(letter))
+    width, height = landscape(letter)
+    page.setStrokeColorRGB(0.08, 0.28, 0.52)
+    page.setLineWidth(3)
+    page.rect(28, 28, width - 56, height - 56)
+    page.setFillColorRGB(0.04, 0.22, 0.42)
+    page.setFont("Helvetica-Bold", 15)
+    page.drawCentredString(width / 2, height - 92, "AXIOM GATEWAY CONSULT ACADEMY")
+    page.setFont("Helvetica-Bold", 30)
+    page.drawCentredString(width / 2, height - 155, "ADMISSION CERTIFICATE")
+    page.setFillColorRGB(0.15, 0.18, 0.22)
+    page.setFont("Helvetica", 14)
+    page.drawCentredString(width / 2, height - 210, "This confirms that")
+    page.setFont("Helvetica-Bold", 24)
+    page.drawCentredString(width / 2, height - 250, certificate.student.full_name)
+    page.setFont("Helvetica", 14)
+    page.drawCentredString(width / 2, height - 290, f"has been admitted to {certificate.course.title}")
+    page.drawCentredString(width / 2, height - 325, f"Instructor: {certificate.issued_by_instructor.full_name if certificate.issued_by_instructor else certificate.course.instructor_name}")
+    page.drawCentredString(width / 2, height - 360, f"Issued: {certificate.issue_date.strftime('%d %B %Y')}")
+    page.setFont("Helvetica", 10)
+    page.drawCentredString(width / 2, 78, f"Certificate {certificate.certificate_number} · Verification code {certificate.verification_code}")
+    verification_url = url_for("public.verify_certificate", code=certificate.verification_code, _external=True)
+    page.drawCentredString(width / 2, 60, f"Verify at {verification_url}")
+    from reportlab.graphics import renderPDF
+    from reportlab.graphics.barcode.qr import QrCodeWidget
+    from reportlab.graphics.shapes import Drawing
+
+    qr = QrCodeWidget(verification_url)
+    x1, y1, x2, y2 = qr.getBounds()
+    qr_size = 54
+    drawing = Drawing(qr_size, qr_size, transform=[qr_size / (x2 - x1), 0, 0, qr_size / (y2 - y1), -x1, -y1])
+    drawing.add(qr)
+    renderPDF.draw(drawing, page, width - 88, 42)
+    page.save()
+    output.seek(0)
+    return send_file(output, mimetype="application/pdf", as_attachment=True, download_name=f"{certificate.certificate_number}.pdf")
+
+
+@instructor_bp.route("/certificates/<int:certificate_id>/revoke", methods=["POST"])
+@login_required
+def revoke_certificate(certificate_id):
+    certificate = AcademyCertificate.query.join(Course).filter(
+        AcademyCertificate.id == certificate_id,
+        Course.instructor_id == current_user.id,
+        AcademyCertificate.status == "issued",
+    ).first_or_404()
+    reason = request.form.get("reason", "").strip()
+    if len(reason) < 5:
+        flash("Provide a reason of at least five characters.", "error")
+        return redirect(url_for("instructor.certificates"))
+    certificate.status = "revoked"
+    certificate.revoked_at = datetime.now(timezone.utc)
+    certificate.revoked_reason = reason[:1000]
+    write_instructor_audit("certificate_revoked", "certificate", certificate.id, instructor_id=current_user.id, details=certificate.revoked_reason)
+    db.session.commit()
+    flash("Certificate revoked. Public verification will report it as revoked.", "success")
+    return redirect(url_for("instructor.certificates"))
+
+
+@instructor_bp.route("/earnings", methods=["GET", "POST"])
+@login_required
+def earnings():
+    if request.method == "POST":
+        try:
+            amount_naira = Decimal(request.form.get("amount", ""))
+            amount_kobo_decimal = amount_naira * 100
+            amount_kobo = int(amount_kobo_decimal)
+            if amount_kobo_decimal != amount_kobo or not amount_naira.is_finite():
+                amount_kobo = 0
+        except (InvalidOperation, ValueError):
+            amount_kobo = 0
+        available_entries = InstructorEarning.query.filter_by(instructor_id=current_user.id, payout_status="available").order_by(InstructorEarning.created_at.asc()).all()
+        available = sum(item.instructor_share_kobo for item in available_entries)
+        settings = CompanySettings.query.order_by(CompanySettings.id.desc()).first()
+        minimum = settings.academy_minimum_payout_kobo if settings else 0
+        active_request = InstructorPayoutRequest.query.filter(InstructorPayoutRequest.instructor_id == current_user.id, InstructorPayoutRequest.status.in_(["pending", "approved"])).first()
+        profile_complete = all((current_user.payout_bank_name, current_user.payout_account_name, current_user.payout_bank_code, current_user.payout_account_number_encrypted))
+        if not profile_complete:
+            flash("Add your payout bank details before requesting a transfer.", "error")
+        elif amount_kobo <= 0 or amount_kobo < minimum or amount_kobo != available or active_request:
+            flash("Request the full available balance, meet the configured minimum, and resolve any existing request first.", "error")
+        else:
+            remaining = amount_kobo
+            for earning in available_entries:
+                allocated = min(remaining, earning.instructor_share_kobo)
+                if allocated <= 0:
+                    break
+                earning.payout_status = "requested"
+                remaining -= allocated
+            payout = InstructorPayoutRequest(instructor_id=current_user.id, amount_kobo=amount_kobo, status="pending")
+            db.session.add(payout)
+            db.session.flush()
+            remaining = amount_kobo
+            for earning in available_entries:
+                allocated = min(remaining, earning.instructor_share_kobo)
+                if allocated <= 0:
+                    break
+                db.session.add(InstructorPayoutAllocation(payout_request_id=payout.id, earning_id=earning.id, amount_kobo=allocated))
+                remaining -= allocated
+            write_instructor_audit("payout_requested", "payout", None, instructor_id=current_user.id, details=str(amount_kobo))
+            db.session.commit()
+            flash("Payout request submitted for admin review.", "success")
+            return redirect(url_for("instructor.earnings"))
+    entries_query = InstructorEarning.query.filter_by(instructor_id=current_user.id)
+    start_date = request.args.get("start", "").strip()
+    end_date = request.args.get("end", "").strip()
+    course_filter = request.args.get("course", type=int)
+    payout_filter = request.args.get("status", "").strip()
+    if start_date:
+        try:
+            entries_query = entries_query.filter(InstructorEarning.created_at >= datetime.fromisoformat(start_date))
+        except ValueError:
+            start_date = ""
+    if end_date:
+        try:
+            entries_query = entries_query.filter(InstructorEarning.created_at < datetime.fromisoformat(end_date) + timedelta(days=1))
+        except ValueError:
+            end_date = ""
+    if payout_filter in {"available", "requested", "paid", "reversed"}:
+        entries_query = entries_query.filter_by(payout_status=payout_filter)
+    if course_filter:
+        entries_query = entries_query.join(AcademyOrder, InstructorEarning.order_id == AcademyOrder.id).filter(AcademyOrder.item_type == "course", AcademyOrder.item_id == course_filter)
+    entries = entries_query.order_by(InstructorEarning.created_at.desc()).all()
+    reversals = InstructorReversal.query.filter_by(instructor_id=current_user.id).order_by(InstructorReversal.created_at.desc()).all()
+    requests_list = InstructorPayoutRequest.query.filter_by(instructor_id=current_user.id).order_by(InstructorPayoutRequest.created_at.desc()).all()
+    course_ids = [course.id for course in Course.query.filter_by(instructor_id=current_user.id).all()]
+    paid_orders = AcademyOrder.query.filter(
+        AcademyOrder.item_type == "course",
+        AcademyOrder.item_id.in_(course_ids),
+        AcademyOrder.status == "paid",
+    ).all() if course_ids else []
+    totals = {
+        "gross": sum(int((Decimal(str(order.amount)) * 100).quantize(Decimal("1"))) for order in paid_orders),
+        "commission": sum(item.commission_kobo for item in entries) - sum(item.commission_reversed_kobo for item in reversals),
+        "net": sum(item.instructor_share_kobo for item in entries) - sum(item.instructor_share_reversed_kobo for item in reversals),
+        "available": sum(item.instructor_share_kobo for item in entries if item.payout_status == "available"),
+        "pending": sum(item.amount_kobo for item in requests_list if item.status == "pending"),
+        "paid": sum(item.amount_kobo for item in requests_list if item.status == "paid"),
+    }
+    course_map = {course.id: course for course in Course.query.filter(Course.id.in_(course_ids)).all()} if course_ids else {}
+    return render_template(
+        "instructor/earnings.html",
+        entries=entries,
+        payout_requests=requests_list,
+        totals=totals,
+        course_map=course_map,
+        reversals=reversals,
+        start_date=start_date,
+        end_date=end_date,
+        course_filter=course_filter,
+        payout_filter=payout_filter,
+        instructor_courses=Course.query.filter_by(instructor_id=current_user.id).order_by(Course.title.asc()).all(),
+        payout_account_mask=mask_payout_account(current_user.payout_account_number_encrypted),
+    )
+
+
+@instructor_bp.route("/payout-profile", methods=["GET", "POST"])
+@login_required
+def payout_profile():
+    if request.method == "POST":
+        bank_name = request.form.get("bank_name", "").strip()[:120]
+        account_name = request.form.get("account_name", "").strip()[:160]
+        account_number = request.form.get("account_number", "").strip()
+        bank_code = request.form.get("bank_code", "").strip()[:30]
+        if not bank_name or not account_name or not bank_code:
+            flash("Bank, account name, and bank code are required.", "error")
+        elif account_number and (not account_number.isdigit() or not 8 <= len(account_number) <= 20):
+            flash("Enter a valid account number.", "error")
+        else:
+            current_user.payout_bank_name = bank_name
+            current_user.payout_account_name = account_name
+            current_user.payout_bank_code = bank_code
+            if account_number:
+                current_user.payout_account_number_encrypted = payout_account_cipher().encrypt(account_number.encode("utf-8")).decode("ascii")
+            write_instructor_audit("payout_profile_updated", "instructor", current_user.id, instructor_id=current_user.id)
+            db.session.commit()
+            flash("Payout profile saved. Account number is encrypted at rest.", "success")
+            return redirect(url_for("instructor.payout_profile"))
+    return render_template(
+        "instructor/payout_profile.html",
+        instructor=current_user,
+        masked_account=mask_payout_account(current_user.payout_account_number_encrypted),
+    )
+
+
+@instructor_bp.route("/analytics")
+@login_required
+def analytics():
+    courses = Course.query.filter_by(instructor_id=current_user.id).all()
+    course_ids = [course.id for course in courses]
+    course_filter = request.args.get("course", type=int)
+    start_date = request.args.get("start", "").strip()
+    end_date = request.args.get("end", "").strip()
+    selected_course_ids = [course_filter] if course_filter in course_ids else course_ids
+    enrollment_query = CourseEnrollment.query.filter(CourseEnrollment.course_id.in_(selected_course_ids)) if selected_course_ids else CourseEnrollment.query.filter(db.false())
+    earning_query = InstructorEarning.query.filter_by(instructor_id=current_user.id)
+    if selected_course_ids:
+        earning_query = earning_query.join(AcademyOrder, InstructorEarning.order_id == AcademyOrder.id).filter(AcademyOrder.item_type == "course", AcademyOrder.item_id.in_(selected_course_ids))
+    if start_date:
+        try:
+            date_start = datetime.fromisoformat(start_date)
+            enrollment_query = enrollment_query.filter(CourseEnrollment.created_at >= date_start)
+            earning_query = earning_query.filter(InstructorEarning.created_at >= date_start)
+        except ValueError:
+            start_date = ""
+    if end_date:
+        try:
+            date_end = datetime.fromisoformat(end_date) + timedelta(days=1)
+            enrollment_query = enrollment_query.filter(CourseEnrollment.created_at < date_end)
+            earning_query = earning_query.filter(InstructorEarning.created_at < date_end)
+        except ValueError:
+            end_date = ""
+    enrollments = enrollment_query.all()
+    earnings_list = earning_query.all()
+    reversals = InstructorReversal.query.filter_by(instructor_id=current_user.id).all()
+    if selected_course_ids:
+        reversals = [item for item in reversals if item.order.item_type == "course" and item.order.item_id in selected_course_ids]
+    paid_orders_query = AcademyOrder.query.filter(
+        AcademyOrder.item_type == "course",
+        AcademyOrder.item_id.in_(selected_course_ids),
+        AcademyOrder.status == "paid",
+    ) if selected_course_ids else AcademyOrder.query.filter(db.false())
+    if start_date:
+        paid_orders_query = paid_orders_query.filter(AcademyOrder.created_at >= date_start)
+    if end_date:
+        paid_orders_query = paid_orders_query.filter(AcademyOrder.created_at < date_end)
+    paid_orders = paid_orders_query.all()
+    daily = {}
+    for enrollment in enrollments:
+        day = enrollment.created_at.date().isoformat()
+        daily[day] = daily.get(day, 0) + 1
+    return render_template("instructor/analytics.html", courses=courses, enrollments=enrollments, daily_enrollments=sorted(daily.items()), earnings=earnings_list, paid_orders=paid_orders, reversals=reversals, course_filter=course_filter, start_date=start_date, end_date=end_date)
+
+
+@instructor_bp.route("/notifications")
+@login_required
+def notifications():
+    items = InstructorNotification.query.filter_by(instructor_id=current_user.id).order_by(InstructorNotification.created_at.desc()).paginate(page=request.args.get("page", 1, type=int), per_page=25, error_out=False)
+    return render_template("instructor/notifications.html", notifications=items)
+
+
+@instructor_bp.route("/notifications/<int:notification_id>/read", methods=["POST"])
+@login_required
+def notification_read(notification_id):
+    notification = InstructorNotification.query.filter_by(id=notification_id, instructor_id=current_user.id).first_or_404()
+    notification.is_read = True
+    db.session.commit()
+    return redirect(notification.target_url or url_for("instructor.notifications"))
+
+
+@instructor_bp.route("/notifications/read-all", methods=["POST"])
+@login_required
+def notifications_read_all():
+    InstructorNotification.query.filter_by(instructor_id=current_user.id, is_read=False).update({InstructorNotification.is_read: True}, synchronize_session=False)
+    db.session.commit()
+    return redirect(url_for("instructor.notifications"))
+
+
+@admin_bp.route("/instructors")
+@login_required
+def instructors_admin():
+    instructors = Instructor.query.order_by(Instructor.created_at.desc()).all()
+    orders_to_reverse = AcademyOrder.query.join(Course, (AcademyOrder.item_type == "course") & (AcademyOrder.item_id == Course.id)).join(InstructorEarning, InstructorEarning.order_id == AcademyOrder.id).filter(Course.instructor_id.isnot(None), AcademyOrder.status == "paid", InstructorEarning.payout_status == "available", AcademyOrder.payment_events.any(PaymentEvent.status == "verified")).order_by(AcademyOrder.created_at.desc()).limit(100).all()
+    reverse_courses = {course.id: course for course in Course.query.filter(Course.id.in_([order.item_id for order in orders_to_reverse])).all()} if orders_to_reverse else {}
+    payout_requests = InstructorPayoutRequest.query.filter(InstructorPayoutRequest.status.in_(["pending", "approved"])).order_by(InstructorPayoutRequest.created_at.asc()).all()
+    payout_instructor_ids = {payout.instructor_id for payout in payout_requests}
+    payout_instructors = Instructor.query.filter(Instructor.id.in_(payout_instructor_ids)).all() if payout_instructor_ids else []
+    payout_profiles = {item.id: {"bank": item.payout_bank_name, "account_name": item.payout_account_name, "account_number": decrypt_payout_account(item.payout_account_number_encrypted), "bank_code": item.payout_bank_code} for item in payout_instructors}
+    return render_template(
+        "admin/instructors.html",
+        instructors=instructors,
+        courses_to_review=Course.query.filter_by(review_status="submitted").all(),
+        payout_requests=payout_requests,
+        orders_to_reverse=orders_to_reverse,
+        reverse_courses=reverse_courses,
+        payout_profiles=payout_profiles,
+    )
+
+
+@admin_bp.route("/instructors/<int:instructor_id>/decision", methods=["POST"])
+@login_required
+def instructor_decision(instructor_id):
+    instructor = Instructor.query.get_or_404(instructor_id)
+    decision = request.form.get("decision")
+    if decision not in {"approved", "rejected", "suspended"}:
+        abort(400)
+    reason = request.form.get("reason", "").strip()[:2000] or None
+    if instructor.status == decision and instructor.decision_reason == reason:
+        return redirect(url_for("admin.instructors_admin"))
+    instructor.status = decision
+    instructor.decision_reason = reason
+    instructor.reviewed_by_admin_id = current_user.id
+    create_instructor_notification(instructor, "account", f"Your instructor account was {decision}.", url_for("instructor.dashboard"), f"instructor-decision-{instructor.id}-{int(datetime.now(timezone.utc).timestamp())}")
+    write_instructor_audit(f"instructor_{decision}", "instructor", instructor.id, instructor_id=instructor.id, admin_id=current_user.id, details=instructor.decision_reason)
+    db.session.commit()
+    send_academy_notice(
+        f"Axiom Academy instructor application {decision}",
+        [instructor.email],
+        f"Your instructor application was {decision}. {instructor.decision_reason or ''}".strip(),
+    )
+    flash(f"Instructor {decision}.", "success")
+    return redirect(url_for("admin.instructors_admin"))
+
+
+@admin_bp.route("/instructor-courses/<int:course_id>/decision", methods=["POST"])
+@login_required
+def instructor_course_decision(course_id):
+    course = Course.query.filter(Course.id == course_id, Course.instructor_id.isnot(None)).first_or_404()
+    decision = request.form.get("decision")
+    if decision not in {"approved", "rejected"}:
+        abort(400)
+    if course.review_status == decision and ((decision == "approved" and course.status == "published") or (decision == "rejected" and course.status == "draft")):
+        return redirect(url_for("admin.instructors_admin"))
+    if decision == "approved" and (
+        not course.instructor
+        or course.instructor.status != "approved"
+        or CourseLesson.query.filter_by(course_id=course.id).count() == 0
+    ):
+        flash("Approve the instructor and confirm the course has lessons before publishing.", "error")
+        return redirect(url_for("admin.instructors_admin"))
+    course.review_status = decision
+    course.status = "published" if decision == "approved" else "draft"
+    course.published_at = datetime.now(timezone.utc) if decision == "approved" else None
+    if decision == "approved":
+        CourseLesson.query.filter_by(course_id=course.id, status="draft").update({CourseLesson.status: "published"}, synchronize_session=False)
+        Quiz.query.filter_by(course_id=course.id, status="draft").update({Quiz.status: "published"}, synchronize_session=False)
+    if course.instructor:
+        create_instructor_notification(course.instructor, "course", f"Your course '{course.title}' was {decision}.", url_for("instructor.course_edit", course_id=course.id), f"course-decision-{course.id}-{int(datetime.now(timezone.utc).timestamp())}")
+    write_instructor_audit(f"course_{decision}", "course", course.id, instructor_id=course.instructor_id, admin_id=current_user.id)
+    db.session.commit()
+    send_academy_notice(
+        f"Axiom Academy course {decision}",
+        [course.instructor.email] if course.instructor else [],
+        f"Your course '{course.title}' was {decision}.",
+    )
+    flash(f"Course {decision}.", "success")
+    return redirect(url_for("admin.instructors_admin"))
+
+
+@admin_bp.route("/instructor-payouts/<int:payout_id>/decision", methods=["POST"])
+@login_required
+def instructor_payout_decision(payout_id):
+    payout = InstructorPayoutRequest.query.get_or_404(payout_id)
+    decision = request.form.get("decision")
+    allowed = (payout.status == "pending" and decision in {"approved", "rejected"}) or (payout.status == "approved" and decision == "paid")
+    if not allowed:
+        abort(400)
+    payout.status = decision
+    payout.decision_note = request.form.get("note", "").strip()[:2000] or None
+    payout.payment_reference = request.form.get("payment_reference", "").strip()[:120] or None
+    payout.reviewed_by_admin_id = current_user.id
+    if decision == "rejected":
+        for allocation in payout.allocations:
+            if allocation.earning.payout_status == "requested":
+                allocation.earning.payout_status = "available"
+            db.session.delete(allocation)
+    elif decision == "paid":
+        if not payout.payment_reference:
+            flash("A verified payment reference is required to mark a payout paid.", "error")
+            return redirect(url_for("admin.instructors_admin"))
+        if sum(allocation.amount_kobo for allocation in payout.allocations) != payout.amount_kobo:
+            abort(409)
+        for allocation in payout.allocations:
+            allocation.earning.payout_status = "paid"
+    create_instructor_notification(payout.instructor, "payout", f"Your payout request was marked {decision}.", url_for("instructor.earnings"), f"payout-decision-{payout.id}")
+    write_instructor_audit(f"payout_{decision}", "payout", payout.id, instructor_id=payout.instructor_id, admin_id=current_user.id, details=payout.payment_reference or payout.decision_note)
+    db.session.commit()
+    send_academy_notice(
+        f"Axiom Academy payout request {decision}",
+        [payout.instructor.email],
+        f"Your payout request of NGN {payout.amount_kobo / 100:.2f} was marked {decision}. {payout.decision_note or ''}".strip(),
+    )
+    flash(f"Payout request {decision}.", "success")
+    return redirect(url_for("admin.instructors_admin"))
+
+
+@admin_bp.route("/instructor-orders/<int:order_id>/reverse", methods=["POST"])
+@login_required
+def instructor_order_reverse(order_id):
+    order = AcademyOrder.query.filter_by(id=order_id, item_type="course", status="paid").first_or_404()
+    if not order.payment_events or not any(event.status == "verified" for event in order.payment_events):
+        abort(409)
+    reversal = reverse_instructor_earning(order, request.form.get("reason", "").strip())
+    if not reversal:
+        abort(409)
+    order.status = "refunded"
+    enrollment = CourseEnrollment.query.filter_by(student_id=order.student_id, course_id=order.item_id).first()
+    if enrollment:
+        enrollment.status = "cancelled"
+    for certificate in AcademyCertificate.query.filter_by(student_id=order.student_id, course_id=order.item_id, status="issued").all():
+        certificate.status = "revoked"
+        certificate.revoked_at = datetime.now(timezone.utc)
+        certificate.revoked_reason = "Course payment was refunded."
+    write_instructor_audit("course_order_refunded", "order", order.id, admin_id=current_user.id, details=reversal.reason)
+    db.session.commit()
+    flash("Order marked refunded and instructor earnings reversed.", "success")
+    return redirect(url_for("admin.course_payments"))
+
+
 @admin_bp.route("/login", methods=["GET", "POST"])
 def admin_login():
     form = AdminLoginForm()
@@ -847,7 +2129,43 @@ def admin_login():
             flash("Welcome back.", "success")
             return redirect(url_for("admin.dashboard"))
         flash("Invalid login credentials.", "error")
-    return render_template("admin/login.html", form=form)
+    return render_template(
+        "admin/login.html",
+        form=form,
+        admin_signup_available=(
+            bool(current_app.config.get("ADMIN_SETUP_KEY"))
+            and AdminUser.query.count() == 0
+        ),
+    )
+
+
+@admin_bp.route("/signup", methods=["GET", "POST"])
+@limiter.limit("5 per hour")
+def admin_signup():
+    setup_key = current_app.config.get("ADMIN_SETUP_KEY")
+    if not setup_key or AdminUser.query.count() > 0:
+        abort(404)
+
+    form = AdminRegistrationForm()
+    if form.validate_on_submit():
+        if not hmac.compare_digest(form.setup_key.data, setup_key):
+            flash("Invalid admin setup key.", "error")
+        elif AdminUser.query.filter_by(email=form.email.data.strip().lower()).first():
+            flash("An account with that email already exists.", "error")
+        else:
+            user = AdminUser(
+                name=form.name.data.strip(),
+                email=form.email.data.strip().lower(),
+                role="admin",
+                active=True,
+            )
+            user.set_password(form.password.data)
+            db.session.add(user)
+            db.session.commit()
+            login_user(user, remember=True)
+            flash("Admin account created. Welcome to the dashboard.", "success")
+            return redirect(url_for("admin.dashboard"))
+    return render_template("admin/signup.html", form=form)
 
 
 @admin_bp.route("/logout")
@@ -931,6 +2249,15 @@ def review_course_payment(order_id):
             enrolment.source = "bank_transfer"
         else:
             db.session.add(CourseEnrollment(student_id=order.student_id, course_id=course.id, order_id=order.id, status="active", progress=0.0, source="bank_transfer"))
+        if course.instructor_id:
+            record_instructor_earning(order, course)
+            create_instructor_notification(
+                course.instructor,
+                "enrollment",
+                f"A verified payment was approved for {course.title}.",
+                url_for("instructor.students"),
+                f"verified-receipt-{order.id}",
+            )
         db.session.commit()
         send_academy_notice("Axiom Academy course access approved", [order.student.email], f"Your payment receipt for {course.title} has been approved. You can now access the course.")
         flash("Receipt approved and course access granted.", "success")
@@ -1366,6 +2693,13 @@ def settings():
     if request.method == "POST" and form.validate_on_submit():
         form.populate_obj(settings)
         settings.canonical_origin = settings.canonical_origin or current_app.config.get("CANONICAL_ORIGIN")
+        write_instructor_audit(
+            "academy_financial_settings_updated",
+            "company_settings",
+            settings.id,
+            admin_id=current_user.id,
+            details=f"commission_percent={settings.academy_commission_percent};minimum_payout_kobo={settings.academy_minimum_payout_kobo}",
+        )
         db.session.commit()
         flash("Company settings updated.", "success")
         return redirect(url_for("admin.settings"))
@@ -1414,7 +2748,7 @@ def student_require_login():
 
 @admin_bp.before_request
 def require_login():
-    if request.endpoint and request.endpoint.startswith("admin") and request.endpoint != "admin.admin_login":
+    if request.endpoint and request.endpoint.startswith("admin") and request.endpoint not in {"admin.admin_login", "admin.admin_signup"}:
         if not current_user.is_authenticated:
             return redirect(url_for("admin.admin_login"))
         if not isinstance(current_user, AdminUser):

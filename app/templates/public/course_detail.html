@@ -36,9 +36,9 @@
             {% else %}
               <form method="post" action="{{ url_for('student.checkout_course', course_id=course.id) }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="mt-6 inline-flex w-full justify-center rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-500">Pay by bank transfer &amp; submit receipt</button>
+                <button type="submit" class="mt-6 inline-flex w-full justify-center rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-500">{% if config.PAYSTACK_SECRET_KEY %}Continue to secure checkout{% else %}Pay by bank transfer &amp; submit receipt{% endif %}</button>
               </form>
-              <p class="mt-3 text-center text-xs text-slate-500">Course access is granted only after receipt approval.</p>
+                <p class="mt-3 text-center text-xs text-slate-500">Course access is granted only after payment verification or receipt approval.</p>
             {% endif %}
           {% else %}
             <a href="{{ url_for('student.student_login') }}" class="mt-6 inline-flex w-full justify-center rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-500">Login to enroll</a>

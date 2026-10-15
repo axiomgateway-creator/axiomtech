@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}Create Admin Account | Axiom Gateway Consult{% endblock %}
+{% block content %}
+<section class="relative bg-slate-900 text-white py-16 lg:py-20 overflow-hidden">
+  <div class="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950"></div>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <div class="max-w-2xl space-y-3">
+      <p class="text-sm font-semibold uppercase tracking-widest text-blue-300">Secure setup</p>
+      <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight">Create the first admin account</h1>
+      <p class="text-slate-300 text-lg">This one-time setup is protected by your private admin setup key.</p>
+    </div>
+  </div>
+</section>
+
+<section class="py-14 bg-slate-50">
+  <div class="mx-auto max-w-xl px-4 sm:px-6 lg:px-8">
+    <div class="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/60">
+      <form method="post" class="space-y-5">
+        {{ form.hidden_tag() }}
+        {% for field in [form.name, form.email, form.setup_key, form.password, form.confirm_password] %}
+        <div>
+          {{ field.label(class_='mb-2 block text-sm font-semibold text-slate-700') }}
+          {{ field(type='password' if field.name in ['setup_key', 'password', 'confirm_password'] else 'email' if field.name == 'email' else 'text', autocomplete='new-password' if field.name in ['password', 'confirm_password'] else 'off' if field.name == 'setup_key' else 'name', class_='w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100') }}
+          {% for error in field.errors %}<p class="mt-1 text-sm text-rose-700">{{ error }}</p>{% endfor %}
+        </div>
+        {% endfor %}
+        <p class="text-xs text-slate-500">Use at least 12 characters for the password. The setup key is configured by the site owner and is never included in the page URL.</p>
+        <button type="submit" class="w-full rounded-xl bg-blue-600 px-5 py-3.5 font-semibold text-white transition hover:bg-blue-500">Create admin account</button>
+      </form>
+      <p class="mt-5 text-center text-sm text-slate-600"><a href="{{ url_for('admin.admin_login') }}" class="font-semibold text-blue-700 hover:text-blue-800">Back to admin login</a></p>
+    </div>
+  </div>
+</section>
+{% endblock %}

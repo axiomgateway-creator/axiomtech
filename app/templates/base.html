@@ -46,19 +46,29 @@
 
         <!-- Desktop Navigation Links -->
         <nav class="hidden lg:flex items-center space-x-1 xl:space-x-2" aria-label="Main navigation">
-          <a href="{{ url_for('public.home') }}" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:text-blue-600 hover:bg-slate-50 transition">Home</a>
+          <!-- <a href="{{ url_for('public.home') }}" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:text-blue-600 hover:bg-slate-50 transition">Home</a> -->
           <a href="{{ url_for('public.about') }}" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:text-blue-600 hover:bg-slate-50 transition">About Us</a>
           <a href="{{ url_for('public.services') }}" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:text-blue-600 hover:bg-slate-50 transition">Our Services</a>
           <a href="{{ url_for('public.who_we_serve') }}" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:text-blue-600 hover:bg-slate-50 transition">Who We Serve</a>
           <a href="{{ url_for('public.projects') }}" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:text-blue-600 hover:bg-slate-50 transition">Projects</a>
-          <a href="{{ url_for('public.insights') }}" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:text-blue-600 hover:bg-slate-50 transition">Insights</a>
+          <!-- <a href="{{ url_for('public.insights') }}" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:text-blue-600 hover:bg-slate-50 transition">Insights</a> -->
           <a href="{{ url_for('public.academy_home') }}" {% if request.path.startswith('/academy') %}aria-current="page"{% endif %} class="px-3 py-2 rounded-lg text-sm font-semibold {% if request.path.startswith('/academy') %}bg-blue-50 text-blue-700{% else %}text-slate-700 hover:text-blue-600 hover:bg-slate-50{% endif %} transition">Academy</a>
+          <details class="relative">
+            <summary class="list-none cursor-pointer px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:text-blue-600 hover:bg-slate-50 transition">For instructors <i class="fa-solid fa-chevron-down ml-1 text-[10px]"></i></summary>
+            <div class="absolute right-0 top-full mt-2 w-52 rounded-xl border border-slate-200 bg-white p-2 shadow-xl">
+              <a href="{{ url_for('instructor.login') }}" class="block rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-700">Instructor login</a>
+              <a href="{{ url_for('instructor.register') }}" class="block rounded-lg px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50">Create instructor account</a>
+            </div>
+          </details>
           <a href="{{ url_for('public.contact') }}" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:text-blue-600 hover:bg-slate-50 transition">Contact Us</a>
         </nav>
 
         <!-- Header Actions (Desktop) -->
         <div class="hidden lg:flex items-center gap-3">
-          {% if current_user.is_authenticated and current_user.__class__.__name__ == 'Student' %}
+          {% if current_user.is_authenticated and current_user.__class__.__name__ == 'Instructor' %}
+          <a href="{{ url_for('instructor.dashboard') }}" class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:text-blue-600 font-semibold text-sm transition-all">Instructor dashboard</a>
+          <a href="{{ url_for('instructor.logout') }}" class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition-all">Logout</a>
+          {% elif current_user.is_authenticated and current_user.__class__.__name__ == 'Student' %}
           <a href="{{ url_for('student.dashboard') }}" class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:text-blue-600 hover:bg-blue-50 font-semibold text-sm transition-all">Dashboard</a>
           <a href="{{ url_for('student.student_logout') }}" class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition-all shadow-md shadow-blue-600/20">Logout</a>
           {% elif current_user.is_authenticated and current_user.__class__.__name__ == 'AdminUser' %}
@@ -88,16 +98,24 @@
 
     <!-- Mobile Navigation Drawer -->
     <div id="main-nav" class="hidden lg:hidden border-b border-slate-200 bg-white px-4 pt-2 pb-6 space-y-2 shadow-lg transition-all">
-      <a href="{{ url_for('public.home') }}" class="block px-3 py-2.5 rounded-lg text-base font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition">Home</a>
+      <!-- <a href="{{ url_for('public.home') }}" class="block px-3 py-2.5 rounded-lg text-base font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition">Home</a> -->
       <a href="{{ url_for('public.about') }}" class="block px-3 py-2.5 rounded-lg text-base font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition">About Us</a>
       <a href="{{ url_for('public.services') }}" class="block px-3 py-2.5 rounded-lg text-base font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition">Our Services</a>
       <a href="{{ url_for('public.who_we_serve') }}" class="block px-3 py-2.5 rounded-lg text-base font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition">Who We Serve</a>
       <a href="{{ url_for('public.projects') }}" class="block px-3 py-2.5 rounded-lg text-base font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition">Projects</a>
-      <a href="{{ url_for('public.insights') }}" class="block px-3 py-2.5 rounded-lg text-base font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition">Insights</a>
+      <!-- <a href="{{ url_for('public.insights') }}" class="block px-3 py-2.5 rounded-lg text-base font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition">Insights</a> -->
       <a href="{{ url_for('public.academy_home') }}" {% if request.path.startswith('/academy') %}aria-current="page"{% endif %} class="block px-3 py-2.5 rounded-lg text-base font-semibold {% if request.path.startswith('/academy') %}bg-blue-50 text-blue-700{% else %}text-slate-700 hover:bg-blue-50 hover:text-blue-600{% endif %} transition">Academy</a>
+      <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+        <p class="px-2 pb-1 text-xs font-bold uppercase tracking-wider text-slate-500">For instructors</p>
+        <a href="{{ url_for('instructor.login') }}" class="block px-2 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-white hover:text-blue-600 transition">Instructor login</a>
+        <a href="{{ url_for('instructor.register') }}" class="block px-2 py-2 rounded-lg text-sm font-semibold text-blue-700 hover:bg-white transition">Create instructor account</a>
+      </div>
       <a href="{{ url_for('public.contact') }}" class="block px-3 py-2.5 rounded-lg text-base font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition">Contact Us</a>
       <div class="pt-2 space-y-2">
-        {% if current_user.is_authenticated and current_user.__class__.__name__ == 'Student' %}
+        {% if current_user.is_authenticated and current_user.__class__.__name__ == 'Instructor' %}
+        <a href="{{ url_for('instructor.dashboard') }}" class="w-full inline-flex items-center justify-center px-5 py-3 rounded-xl border border-slate-200 bg-white text-slate-700 font-semibold text-sm transition">Instructor dashboard</a>
+        <a href="{{ url_for('instructor.logout') }}" class="w-full inline-flex items-center justify-center px-5 py-3 rounded-xl bg-blue-600 text-white font-semibold text-sm transition shadow-md">Logout</a>
+        {% elif current_user.is_authenticated and current_user.__class__.__name__ == 'Student' %}
         <a href="{{ url_for('student.dashboard') }}" class="w-full inline-flex items-center justify-center px-5 py-3 rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:text-blue-600 font-semibold text-sm transition">Dashboard</a>
         <a href="{{ url_for('student.student_logout') }}" class="w-full inline-flex items-center justify-center px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition shadow-md">Logout</a>
         {% elif current_user.is_authenticated and current_user.__class__.__name__ == 'AdminUser' %}

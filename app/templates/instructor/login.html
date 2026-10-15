@@ -1,0 +1,17 @@
+{% extends 'instructor/base.html' %}
+{% block title %}Instructor sign in{% endblock %}
+{% block auth_content %}
+<section class="mx-auto max-w-md rounded-lg border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+  <p class="text-xs font-bold uppercase tracking-widest text-blue-700">Axiom Academy</p>
+  <h1 class="mt-2 text-3xl font-bold text-slate-900">Instructor sign in</h1>
+  <form method="post" class="mt-6 space-y-4">
+    {{ form.hidden_tag() }}
+    {% for field in [form.email, form.password] %}
+    <label class="grid gap-1 text-sm font-semibold text-slate-700">{{ field.label }}{{ field(type='password' if field.name == 'password' else 'email', class_='rounded-md border border-slate-300 px-3 py-2 font-normal') }}{% for error in field.errors %}<span class="text-xs text-rose-700">{{ error }}</span>{% endfor %}</label>
+    {% endfor %}
+    <label class="flex items-center gap-2 text-sm text-slate-600">{{ form.remember }} Remember me</label>
+    <button class="w-full rounded-md bg-blue-700 px-5 py-3 font-semibold text-white hover:bg-blue-800">Sign in</button>
+  </form>
+  <p class="mt-5 text-sm text-slate-600">New to teaching here? <a class="font-semibold text-blue-700" href="{{ url_for('instructor.register') }}">Apply as an instructor</a></p>
+</section>
+{% endblock %}
