@@ -92,6 +92,14 @@ def test_app_startup_does_not_seed_content():
         assert CourseCategory.query.count() == 0
 
 
+def test_company_address_and_youtube_channel_are_visible(client):
+    for path in ("/", "/contact"):
+        response = client.get(path)
+        assert response.status_code == 200
+        assert b"No 5 Adetokunbo Ademola Street Mitama, Abuja" in response.data
+        assert b'href="https://www.youtube.com/channel/UCVWSZcwBZB8tu7f76OtVKqA"' in response.data
+
+
 def test_password_hashing_works_without_hashlib_scrypt(monkeypatch):
     instructor = Instructor(
         full_name="Hash Test Instructor",
@@ -153,6 +161,10 @@ def test_instructor_application_approval_course_review_and_ownership():
     decision = admin_client.post(f"/admin/instructors/{instructor_id}/decision", data={"decision": "approved", "reason": "Credentials reviewed"})
     assert decision.status_code == 302
     assert instructor_client.get("/academy/instructor/courses").status_code == 200
+    instructor_dashboard = instructor_client.get("/academy/instructor/dashboard")
+    assert instructor_dashboard.status_code == 200
+    assert b'id="instructor-menu-toggle"' in instructor_dashboard.data
+    assert b'aria-controls="instructor-sidebar"' in instructor_dashboard.data
     for portal_path in [
         "/academy/instructor/dashboard",
         "/academy/instructor/students",
@@ -586,7 +598,38 @@ def test_verified_instructor_order_reversal_is_idempotent():
 def test_homepage_loads(client):
     response = client.get("/")
     assert response.status_code == 200
-    assert b"Axiom Gateway Consult" in response.data.lower() or b"Empowering People" in response.data
+    assert b"Connecting People" in response.data
+
+
+def test_homepage_shows_only_published_academy_courses(client):
+    with client.application.app_context():
+        db.session.add_all([
+            Course(
+                title="Published Home Course",
+                slug="published-home-course",
+                short_description="Published course summary.",
+                description="Published course details.",
+                price=0,
+                is_free=True,
+                status="published",
+                is_featured=True,
+            ),
+            Course(
+                title="Draft Home Course",
+                slug="draft-home-course",
+                short_description="Draft course summary.",
+                description="Draft course details.",
+                price=0,
+                is_free=True,
+                status="draft",
+            ),
+        ])
+        db.session.commit()
+
+    response = client.get("/")
+    assert response.status_code == 200
+    assert b"Published Home Course" in response.data
+    assert b"Draft Home Course" not in response.data
 
 
 def test_homepage_uses_distinct_images_for_services(client):
@@ -1012,6 +1055,23 @@ def test_lesson_progress_awards_certificate(client):
         course = db.session.get(Course, course_id)
         lesson_ids = [lesson.id for lesson in CourseLesson.query.filter_by(course_id=course_id).order_by(CourseLesson.order_index).all()]
         slug = course.slug
+    learning_page = client.get(f"/student/courses/{slug}")
+    assert learning_page.status_code == 200
+    assert b"Browse lessons" in learning_page.data
+    assert b"Previous lesson" in learning_page.data
+    assert b"Next lesson" in learning_page.data
+    with app.app_context():
+        enrollment = CourseEnrollment.query.filter_by(course_id=course_id).one()
+        assert enrollment.last_lesson_id == lesson_ids[0]
+        assert enrollment.last_accessed_at is not None
+
+    later_lesson_page = client.get(f"/student/courses/{slug}?lesson_id={lesson_ids[-1]}")
+    assert later_lesson_page.status_code == 200
+    with app.app_context():
+        enrollment = CourseEnrollment.query.filter_by(course_id=course_id).one()
+        assert enrollment.last_lesson_id == lesson_ids[-1]
+        assert enrollment.last_accessed_at is not None
+
     for lesson_id in lesson_ids:
         response = client.post(f"/student/courses/{slug}/lessons/{lesson_id}/complete")
         assert response.status_code == 302
@@ -1020,7 +1080,20 @@ def test_lesson_progress_awards_certificate(client):
         enrollment = CourseEnrollment.query.filter_by(course_id=course_id).first()
         assert enrollment.progress == 100
         assert enrollment.completed_at is not None
-        assert enrollment.student.certificates[0].course_id == course_id
+        certificate = enrollment.student.certificates[0]
+        assert certificate.course_id == course_id
+        certificate_id = certificate.id
+        verification_code = certificate.verification_code
+    certificate_pdf = client.get(f"/student/certificates/{certificate_id}.pdf")
+    assert certificate_pdf.status_code == 200
+    assert certificate_pdf.mimetype == "application/pdf"
+    assert certificate_pdf.data.startswith(b"%PDF")
+    verification = client.get(f"/academy/certificates/verify?code={verification_code}")
+    assert b"Certificate is valid" in verification.data
+    dashboard = client.get("/student/dashboard")
+    assert dashboard.status_code == 200
+    assert b"Overall lesson progress" in dashboard.data
+    assert b"100%" in dashboard.data
 
 
 def test_quiz_submission_is_scored_for_enrolled_student(client):

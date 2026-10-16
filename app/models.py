@@ -162,9 +162,10 @@ class CompanySettings(TimestampMixin, db.Model):
     tagline = db.Column(db.String(200), default="Connecting People, Technology and Possibilities.", nullable=False)
     contact_email = db.Column(db.String(200), default="axiomgateway@gmail.com", nullable=False)
     telephone = db.Column(db.String(50), default="+2348081948464", nullable=False)
-    office_address = db.Column(db.Text, default="No 13 Chu", nullable=False)
+    office_address = db.Column(db.Text, default="No 5 Adetokunbo Ademola Street Mitama, Abuja", nullable=False)
     instagram_url = db.Column(db.String(255), default="https://instagram.com/axiomgatway")
     whatsapp_url = db.Column(db.String(255), default="https://whatsapp.com/dl/")
+    youtube_url = db.Column(db.String(255), default="https://www.youtube.com/channel/UCVWSZcwBZB8tu7f76OtVKqA")
     logo_url = db.Column(db.String(255), default="/static/images/logo.svg")
     favicon_url = db.Column(db.String(255), default="/static/images/favicon.svg")
     footer_text = db.Column(db.Text, default="Technology, digital skills and business consulting.")
@@ -297,6 +298,17 @@ class CourseEnrollment(TimestampMixin, db.Model):
     lesson_progress = db.relationship("LessonProgress", back_populates="enrolment", cascade="all, delete-orphan")
 
     __table_args__ = (db.UniqueConstraint("student_id", "course_id", name="uq_student_course_enrollment"),)
+
+    @property
+    def last_accessed_at(self):
+        """Timestamp of the most recently accessed lesson, without a schema change."""
+        if self.last_lesson_id is None:
+            return None
+        entry = next(
+            (item for item in self.lesson_progress if item.lesson_id == self.last_lesson_id),
+            None,
+        )
+        return entry.updated_at if entry else None
 
 
 class LessonProgress(TimestampMixin, db.Model):

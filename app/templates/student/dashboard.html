@@ -3,95 +3,336 @@
 {% block title %}Student Dashboard | Axiom Academy{% endblock %}
 
 {% block content %}
-<section class="py-16 bg-slate-50">
+<section class="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-blue-50/40 py-10 sm:py-14">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-      <div>
-        <p class="text-sm font-semibold uppercase tracking-[0.2em] text-blue-600">Student dashboard</p>
-        <h1 class="mt-2 text-4xl font-extrabold text-slate-900">Welcome, {{ current_user.full_name }}</h1>
+    
+    <!-- Hero Banner Header -->
+    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-900 via-blue-900 to-indigo-800 p-6 sm:p-10 shadow-xl mb-10 text-white">
+      <!-- Decorative background glow -->
+      <div class="absolute -right-10 -top-10 h-64 w-64 rounded-full bg-blue-500/20 blur-3xl pointer-events-none"></div>
+      <div class="absolute right-20 -bottom-10 h-64 w-64 rounded-full bg-indigo-500/20 blur-3xl pointer-events-none"></div>
+      
+      <div class="relative z-10 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+        <div class="space-y-2">
+          <span class="inline-flex items-center gap-2 rounded-full bg-blue-500/20 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-blue-200 border border-blue-400/30 backdrop-blur-md">
+            <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            Your learning workspace
+          </span>
+          <h1 class="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white">
+            Welcome back, <span class="bg-gradient-to-r from-blue-200 to-indigo-100 bg-clip-text text-transparent">{{ current_user.full_name }}</span>! 👋
+          </h1>
+          <p class="text-blue-200/90 text-sm sm:text-base max-w-xl">
+            Pick up right where you left off or explore new learning paths to expand your skills today.
+          </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+          <a href="{{ url_for('public.academy_courses') }}" class="inline-flex items-center gap-2 rounded-2xl bg-white px-6 py-3.5 text-sm font-bold text-indigo-950 shadow-lg shadow-black/10 transition-all hover:bg-indigo-50 hover:scale-[1.02] active:scale-[0.98]">
+            <i class="fa-solid fa-compass text-indigo-600"></i> Browse catalogue
+          </a>
+        </div>
       </div>
-      <a href="{{ url_for('public.academy_courses') }}" class="rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-500">Browse courses</a>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-      <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <p class="text-sm text-slate-500">Enrolled courses</p>
-        <p class="mt-2 text-3xl font-bold text-slate-900">{{ enrolments|length }}</p>
+    <!-- Calculations -->
+    {% set summary = namespace(total=0, completed=0, completed_courses=0) %}
+    {% for enrolment in enrolments %}
+      {% set published = enrolment.course.lessons|selectattr('status', 'equalto', 'published')|list %}
+      {% set completed = enrolment.lesson_progress|selectattr('completed')|selectattr('lesson.status', 'equalto', 'published')|list %}
+      {% set summary.total = summary.total + (published|length) %}
+      {% set summary.completed = summary.completed + (completed|length) %}
+      {% if enrolment.completed_at %}{% set summary.completed_courses = summary.completed_courses + 1 %}{% endif %}
+    {% endfor %}
+    {% set overall_progress = ((summary.completed / summary.total) * 100) if summary.total else 0 %}
+
+    <!-- Metrics Grid -->
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 sm:gap-6 mb-10">
+      
+      <!-- Card 1 -->
+      <div class="group relative overflow-hidden rounded-2xl border border-indigo-100 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+        <div class="absolute top-0 left-0 h-full w-1.5 bg-gradient-to-b from-indigo-500 to-blue-600"></div>
+        <div class="flex items-center justify-between">
+          <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Enrolled Paths</p>
+          <div class="rounded-xl bg-indigo-50 p-2.5 text-indigo-600 transition group-hover:bg-indigo-600 group-hover:text-white">
+            <i class="fa-solid fa-graduation-cap text-lg"></i>
+          </div>
+        </div>
+        <p class="mt-4 text-3xl font-black text-slate-900">{{ enrolments|length }}</p>
+        <p class="mt-1 text-xs font-medium text-indigo-600">Active learning goals</p>
       </div>
-      <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <p class="text-sm text-slate-500">Certificates</p>
-        <p class="mt-2 text-3xl font-bold text-slate-900">{{ certificates|length }}</p>
+
+      <!-- Card 2 -->
+      <div class="group relative overflow-hidden rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+        <div class="absolute top-0 left-0 h-full w-1.5 bg-gradient-to-b from-emerald-400 to-teal-600"></div>
+        <div class="flex items-center justify-between">
+          <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Lesson Progress</p>
+          <div class="rounded-xl bg-emerald-50 p-2.5 text-emerald-600 transition group-hover:bg-emerald-600 group-hover:text-white">
+            <i class="fa-solid fa-chart-line text-lg"></i>
+          </div>
+        </div>
+        <div class="mt-4 flex items-baseline gap-2">
+          <p class="text-3xl font-black text-slate-900">{{ '%0.0f'|format(overall_progress) }}%</p>
+        </div>
+        <p class="mt-1 text-xs font-medium text-emerald-600">{{ summary.completed }} of {{ summary.total }} lessons completed</p>
       </div>
-      <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <p class="text-sm text-slate-500">Orders</p>
-        <p class="mt-2 text-3xl font-bold text-slate-900">{{ orders|length }}</p>
+
+      <!-- Card 3 -->
+      <div class="group relative overflow-hidden rounded-2xl border border-amber-100 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+        <div class="absolute top-0 left-0 h-full w-1.5 bg-gradient-to-b from-amber-400 to-orange-500"></div>
+        <div class="flex items-center justify-between">
+          <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Finished Courses</p>
+          <div class="rounded-xl bg-amber-50 p-2.5 text-amber-600 transition group-hover:bg-amber-500 group-hover:text-white">
+            <i class="fa-solid fa-trophy text-lg"></i>
+          </div>
+        </div>
+        <p class="mt-4 text-3xl font-black text-slate-900">{{ summary.completed_courses }}</p>
+        <p class="mt-1 text-xs font-medium text-amber-600">Successfully finalized</p>
       </div>
+
+      <!-- Card 4 -->
+      <div class="group relative overflow-hidden rounded-2xl border border-purple-100 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+        <div class="absolute top-0 left-0 h-full w-1.5 bg-gradient-to-b from-purple-400 to-indigo-600"></div>
+        <div class="flex items-center justify-between">
+          <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Certificates</p>
+          <div class="rounded-xl bg-purple-50 p-2.5 text-purple-600 transition group-hover:bg-purple-600 group-hover:text-white">
+            <i class="fa-solid fa-certificate text-lg"></i>
+          </div>
+        </div>
+        <p class="mt-4 text-3xl font-black text-slate-900">{{ certificates|selectattr('status', 'equalto', 'issued')|list|length }}</p>
+        <p class="mt-1 text-xs font-medium text-purple-600">Earned achievements</p>
+      </div>
+
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      <div id="my-courses" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div class="flex items-center justify-between gap-3"><h2 class="text-2xl font-bold text-slate-900">My courses</h2><a href="{{ url_for('student.my_courses') }}" class="text-sm font-semibold text-blue-700 hover:text-blue-900">View all</a></div>
-        <div class="mt-5 space-y-4">
+    <!-- Main Grid Section -->
+    <div class="grid grid-cols-1 gap-8 xl:grid-cols-[1.35fr_0.65fr]">
+      
+      <!-- My Courses Feed -->
+      <div id="my-courses" class="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm sm:p-8">
+        <div class="flex items-center justify-between gap-3 border-b border-slate-100 pb-5">
+          <div>
+            <span class="text-xs font-extrabold uppercase tracking-widest text-indigo-600">Continue learning</span>
+            <h2 class="mt-0.5 text-2xl font-black text-slate-900">My Enrolled Courses</h2>
+          </div>
+          <a href="{{ url_for('student.my_courses') }}" class="group inline-flex items-center gap-1.5 text-sm font-bold text-indigo-600 hover:text-indigo-800">
+            View all <span class="transition-transform group-hover:translate-x-1">→</span>
+          </a>
+        </div>
+
+        <div class="mt-6 grid gap-6 md:grid-cols-2">
           {% for enrolment in enrolments %}
           {% set course = enrolment.course %}
-          <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <div class="flex items-center justify-between gap-4">
-              <h3 class="text-lg font-bold text-slate-900">{{ course.title }}</h3>
-              <span class="text-xs uppercase tracking-wide text-slate-500">{{ enrolment.status }}</span>
+          {% set published_lessons = course.lessons|selectattr('status', 'equalto', 'published')|list %}
+          {% set done_lessons = enrolment.lesson_progress|selectattr('completed')|selectattr('lesson.status', 'equalto', 'published')|list %}
+          {% set course_progress = ((done_lessons|length / published_lessons|length) * 100) if published_lessons else 0 %}
+          
+          <article class="group flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200 bg-white transition-all duration-300 hover:border-indigo-300 hover:shadow-xl hover:-translate-y-1">
+            <div>
+              <div class="relative overflow-hidden h-40 w-full bg-slate-100">
+                <img src="{{ course.cover_image or url_for('static', filename='images/image2.png') }}" alt="{{ course.title }}" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
+                <div class="absolute bottom-3 left-3 right-3 flex items-center justify-between">
+                  <span class="rounded-full bg-black/40 backdrop-blur-md px-3 py-1 text-[11px] font-bold text-white uppercase tracking-wide border border-white/20">
+                    {{ course.difficulty or 'Course' }}
+                  </span>
+                  <span class="rounded-full bg-indigo-600/90 backdrop-blur-md px-3 py-1 text-[11px] font-bold text-white shadow">
+                    {{ enrolment.status|replace('_', ' ')|title }}
+                  </span>
+                </div>
+              </div>
+              
+              <div class="p-5">
+                <h3 class="text-lg font-bold text-slate-900 line-clamp-1 group-hover:text-indigo-600 transition-colors">{{ course.title }}</h3>
+                <p class="mt-1 text-xs text-slate-500 flex items-center gap-1.5">
+                  <i class="fa-solid fa-chalkboard-user text-indigo-500"></i> Instructor: {{ course.instructor.full_name if course.instructor else course.instructor_name }}
+                </p>
+
+                <!-- Progress block -->
+                <div class="mt-5 space-y-2">
+                  <div class="flex items-center justify-between text-xs font-bold text-slate-700">
+                    <span>Progress</span>
+                    <span class="text-indigo-600">{{ '%0.0f'|format(course_progress) }}%</span>
+                  </div>
+                  <div class="h-2.5 overflow-hidden rounded-full bg-slate-100 p-0.5" role="progressbar" aria-valuenow="{{ course_progress|int }}" aria-valuemin="0" aria-valuemax="100">
+                    <div class="h-full rounded-full bg-gradient-to-r from-indigo-500 to-blue-600 transition-all duration-500" style="width: {{ course_progress }}%"></div>
+                  </div>
+                  <div class="flex items-center justify-between text-[11px] text-slate-400 font-medium">
+                    <span>{{ done_lessons|length }} / {{ published_lessons|length }} lessons completed</span>
+                  </div>
+                </div>
+
+                {% if enrolment.last_lesson_id %}
+                  {% set last_lesson = course.lessons|selectattr('id', 'equalto', enrolment.last_lesson_id)|first %}
+                  {% if last_lesson %}
+                  <div class="mt-4 flex items-center gap-2 rounded-xl bg-slate-50 p-2.5 text-xs text-slate-600 border border-slate-100">
+                    <i class="fa-solid fa-clock-rotate-left text-indigo-500 shrink-0"></i>
+                    <span class="truncate">Up next: <strong>{{ last_lesson.title }}</strong></span>
+                  </div>
+                  {% endif %}
+                {% endif %}
+              </div>
             </div>
-            <p class="mt-2 text-sm text-slate-600">Progress: {{ '%0.0f'|format(enrolment.progress) }}%</p>
-            <a href="{{ url_for('student.student_course_detail', slug=course.slug) }}" class="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700">Continue learning <span aria-hidden="true">→</span></a>
-          </div>
+
+            <div class="p-5 pt-0">
+              <a href="{{ url_for('student.student_course_detail', slug=course.slug) }}" class="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white shadow-md shadow-indigo-600/20 transition hover:bg-indigo-700 active:scale-[0.98]">
+                Continue learning <i class="fa-solid fa-arrow-right text-xs"></i>
+              </a>
+            </div>
+          </article>
           {% else %}
-          <p class="text-slate-600">No course enrolments yet. Start with a course from the academy catalogue.</p>
+          <div class="col-span-2 rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 p-12 text-center">
+            <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 mb-3">
+              <i class="fa-solid fa-book-open text-lg"></i>
+            </div>
+            <p class="text-slate-800 font-bold text-base">No course enrolments yet</p>
+            <p class="text-slate-500 text-sm mt-1 max-w-sm mx-auto">Get started by browsing our extensive course catalog and picking your first subject.</p>
+            <a href="{{ url_for('public.academy_courses') }}" class="mt-4 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white shadow hover:bg-indigo-700">Explore catalogue</a>
+          </div>
           {% endfor %}
         </div>
       </div>
 
-      <div id="my-orders" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div class="flex items-center justify-between gap-3"><h2 class="text-2xl font-bold text-slate-900">Recent orders</h2><a href="{{ url_for('student.student_orders') }}" class="text-sm font-semibold text-blue-700 hover:text-blue-900">View all</a></div>
-        <div class="mt-5 space-y-4">
-          {% for order in orders %}
-          <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <div class="flex items-center justify-between gap-4">
-              <h3 class="text-lg font-bold text-slate-900">{{ order.reference }}</h3>
-              <span class="text-xs uppercase tracking-wide text-slate-500">{{ order.status }}</span>
-            </div>
-            <p class="mt-2 text-sm text-slate-600">{{ order.currency }} {{ '%.2f'|format(order.amount) }}</p>
+      <!-- Right Column: Recent Orders -->
+      <div id="my-orders" class="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm sm:p-8 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between gap-3 border-b border-slate-100 pb-5">
+            <h2 class="text-2xl font-black text-slate-900">Recent Orders</h2>
+            <a href="{{ url_for('student.student_orders') }}" class="group inline-flex items-center gap-1.5 text-sm font-bold text-indigo-600 hover:text-indigo-800">
+              View all <span class="transition-transform group-hover:translate-x-1">→</span>
+            </a>
           </div>
-          {% else %}
-          <p class="text-slate-600">No orders yet. Paid learning experiences will appear here after checkout.</p>
-          {% endfor %}
+
+          <div class="mt-6 space-y-4">
+            {% for order in orders %}
+            <div class="group relative overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 to-indigo-50/20 p-4.5 transition hover:border-indigo-200 hover:shadow-md">
+              <div class="flex items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                  <div class="rounded-xl bg-indigo-100/70 p-2.5 text-indigo-600">
+                    <i class="fa-solid fa-receipt"></i>
+                  </div>
+                  <div>
+                    <h3 class="text-sm font-bold text-slate-900">{{ order.reference }}</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Paid transaction</p>
+                  </div>
+                </div>
+                <span class="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-emerald-700 border border-emerald-200">
+                  {{ order.status }}
+                </span>
+              </div>
+              <div class="mt-3 flex items-center justify-between border-t border-slate-200/60 pt-3 text-xs font-bold text-slate-800">
+                <span class="text-slate-400 font-medium">Total Amount</span>
+                <span class="text-indigo-600 text-sm font-black">{{ order.currency }} {{ '%.2f'|format(order.amount) }}</span>
+              </div>
+            </div>
+            {% else %}
+            <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 p-8 text-center">
+              <div class="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-400 mb-2">
+                <i class="fa-solid fa-receipt text-sm"></i>
+              </div>
+              <p class="text-slate-600 text-sm font-medium">No orders yet. Paid learning experiences will appear here after checkout.</p>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="mt-8 rounded-2xl bg-gradient-to-br from-indigo-900 to-blue-900 p-5 text-white shadow-md">
+          <div class="flex items-center gap-3">
+            <div class="rounded-xl bg-white/10 p-3 text-indigo-200">
+              <i class="fa-solid fa-headset text-xl"></i>
+            </div>
+            <div>
+              <h4 class="font-bold text-sm">Need help or support?</h4>
+              <p class="text-xs text-indigo-200/80 mt-0.5">Our support team is always ready to assist you with your learning goals.</p>
+            </div>
+          </div>
         </div>
       </div>
+
     </div>
 
+    <!-- Bottom Secondary Sections: Certificates & Resources -->
     <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
-      <section id="certificates" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div class="flex items-center justify-between gap-3"><h2 class="text-xl font-bold text-slate-900">Certificates</h2><a href="{{ url_for('student.student_certificates') }}" class="text-sm font-semibold text-blue-700 hover:text-blue-900">View all</a></div>
-        <div class="mt-4 space-y-3">
-          {% for certificate in certificates %}
-          <div class="rounded-xl bg-slate-50 p-4">
-            <p class="font-semibold text-slate-900">{{ certificate.course.title }}</p>
-            <p class="mt-1 text-sm text-slate-500">{{ certificate.certificate_number }} · {{ certificate.issue_date.strftime('%d %b %Y') }}</p>
+      
+      <!-- Certificates Section -->
+      <section id="certificates" class="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm sm:p-8">
+        <div class="flex items-center justify-between gap-3 border-b border-slate-100 pb-5">
+          <div class="flex items-center gap-2.5">
+            <div class="rounded-xl bg-purple-50 p-2 text-purple-600">
+              <i class="fa-solid fa-award text-lg"></i>
+            </div>
+            <h2 class="text-xl font-black text-slate-900">Certificates</h2>
           </div>
-          {% else %}<p class="text-sm text-slate-600">Certificates earned from eligible courses will appear here.</p>{% endfor %}
+          <a href="{{ url_for('student.student_certificates') }}" class="group inline-flex items-center gap-1.5 text-sm font-bold text-indigo-600 hover:text-indigo-800">
+            View all <span class="transition-transform group-hover:translate-x-1">→</span>
+          </a>
+        </div>
+
+        <div class="mt-6 space-y-4">
+          {% set issued_certificates = certificates|selectattr('status', 'equalto', 'issued')|list %}
+          {% for certificate in issued_certificates %}
+          <div class="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-purple-100 bg-gradient-to-r from-purple-50/40 to-indigo-50/20 p-5 transition hover:border-purple-300 hover:shadow-md">
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <span class="rounded-full bg-purple-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-purple-700">
+                  {{ certificate.certificate_type|title }}
+                </span>
+                <span class="text-xs font-semibold text-slate-400">No. {{ certificate.certificate_number }}</span>
+              </div>
+              <p class="font-extrabold text-slate-900 text-base group-hover:text-purple-900 transition-colors">{{ certificate.course.title }}</p>
+              <p class="text-xs text-slate-500 font-medium">Issued on {{ certificate.issue_date.strftime('%d %b %Y') }}</p>
+            </div>
+            <a href="{{ url_for('student.student_certificate_pdf', certificate_id=certificate.id) }}" target="_blank" class="inline-flex items-center justify-center gap-2 rounded-xl bg-purple-600 px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-purple-600/20 transition hover:bg-purple-700 shrink-0">
+              <i class="fa-solid fa-download text-xs" aria-hidden="true"></i> View PDF
+            </a>
+          </div>
+          {% else %}
+          <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 p-8 text-center">
+            <div class="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-purple-50 text-purple-400 mb-2">
+              <i class="fa-solid fa-award text-sm"></i>
+            </div>
+            <p class="text-sm text-slate-600 font-medium">Certificates earned from eligible completed courses will appear here.</p>
+          </div>
+          {% endfor %}
         </div>
       </section>
-      <section id="resources" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 class="text-xl font-bold text-slate-900">My resources</h2>
-        <div class="mt-4 space-y-3">
+
+      <!-- My Resources Section -->
+      <section id="resources" class="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm sm:p-8">
+        <div class="flex items-center justify-between gap-3 border-b border-slate-100 pb-5">
+          <div class="flex items-center gap-2.5">
+            <div class="rounded-xl bg-blue-50 p-2 text-blue-600">
+              <i class="fa-solid fa-box-archive text-lg"></i>
+            </div>
+            <h2 class="text-xl font-black text-slate-900">My Resources</h2>
+          </div>
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Downloads</span>
+        </div>
+
+        <div class="mt-6 space-y-4">
           {% for order in product_orders %}
           {% if order.product %}
-          <div class="flex items-center justify-between gap-4 rounded-xl bg-slate-50 p-4">
-            <div><p class="font-semibold text-slate-900">{{ order.product.title }}</p><p class="mt-1 text-xs text-slate-500">{{ order.reference }}</p></div>
-            <a href="{{ url_for('student.download_product', product_id=order.product.id) }}" class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"><i class="fa-solid fa-download" aria-hidden="true"></i>Download</a>
+          <div class="group flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50/60 p-4.5 transition hover:border-blue-300 hover:bg-white hover:shadow-md">
+            <div class="space-y-1">
+              <p class="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{{ order.product.title }}</p>
+              <p class="text-xs font-semibold text-slate-400">Ref: {{ order.reference }}</p>
+            </div>
+            <a href="{{ url_for('student.download_product', product_id=order.product.id) }}" class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-blue-600/20 transition hover:bg-blue-700 shrink-0">
+              <i class="fa-solid fa-download text-xs" aria-hidden="true"></i> Download
+            </a>
           </div>
           {% endif %}
-          {% else %}<p class="text-sm text-slate-600">Purchased resources will be available here.</p>{% endfor %}
+          {% else %}
+          <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 p-8 text-center">
+            <div class="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-400 mb-2">
+              <i class="fa-solid fa-download text-sm"></i>
+            </div>
+            <p class="text-sm text-slate-600 font-medium">Purchased supplementary resources and digital products will be available here.</p>
+          </div>
+          {% endfor %}
         </div>
       </section>
+
     </div>
+
   </div>
 </section>
 {% endblock %}

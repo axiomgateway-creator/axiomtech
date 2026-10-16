@@ -33,6 +33,9 @@
             {% if company_settings.whatsapp_url %}
               <li class="flex items-start gap-3"><i class="fa-brands fa-whatsapp text-emerald-600 mt-1"></i><div><span class="font-semibold text-slate-900">WhatsApp</span><br><a href="{{ company_settings.whatsapp_url }}" target="_blank" rel="noreferrer" class="text-blue-600 hover:underline">{{ company_settings.whatsapp_url }}</a></div></li>
             {% endif %}
+            {% if company_settings.youtube_url %}
+              <li class="flex items-start gap-3"><i class="fa-brands fa-youtube text-red-600 mt-1"></i><div><span class="font-semibold text-slate-900">YouTube</span><br><a href="{{ company_settings.youtube_url }}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">{{ company_settings.youtube_url }}</a></div></li>
+            {% endif %}
           </ul>
         </div>
       </div>

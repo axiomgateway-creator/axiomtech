@@ -441,10 +441,25 @@ def reverse_instructor_earning(order, reason=None):
 
 def award_course_certificate(enrolment):
     course = enrolment.course
-    if not course.certificate_eligible or enrolment.progress < 100:
+    total_lessons = CourseLesson.query.filter_by(course_id=course.id, status="published").count()
+    completed_lessons = (
+        LessonProgress.query.join(CourseLesson, LessonProgress.lesson_id == CourseLesson.id)
+        .filter(
+            LessonProgress.enrolment_id == enrolment.id,
+            LessonProgress.completed.is_(True),
+            CourseLesson.course_id == course.id,
+            CourseLesson.status == "published",
+        )
+        .count()
+    )
+    if not course.certificate_eligible or not total_lessons or completed_lessons < total_lessons:
         return None
     certificate = AcademyCertificate.query.filter_by(student_id=enrolment.student_id, course_id=course.id, certificate_type="completion").first()
     if certificate:
+        if certificate.status != "issued":
+            certificate.status = "issued"
+            certificate.revoked_at = None
+            certificate.revoked_reason = None
         return certificate
     certificate = AcademyCertificate(
         student_id=enrolment.student_id,
@@ -468,12 +483,57 @@ def award_course_certificate(enrolment):
     return certificate
 
 
+def recalculate_course_progress(course_id):
+    """Recompute enrollment progress against the course's currently published lessons."""
+    total_lessons = CourseLesson.query.filter_by(course_id=course_id, status="published").count()
+    enrolments = CourseEnrollment.query.filter_by(course_id=course_id).all()
+    for enrolment in enrolments:
+        completed_lessons = (
+            LessonProgress.query.join(CourseLesson, LessonProgress.lesson_id == CourseLesson.id)
+            .filter(
+                LessonProgress.enrolment_id == enrolment.id,
+                LessonProgress.completed.is_(True),
+                CourseLesson.course_id == course_id,
+                CourseLesson.status == "published",
+            )
+            .count()
+        )
+        is_complete = bool(total_lessons and completed_lessons >= total_lessons)
+        enrolment.progress = (completed_lessons / total_lessons) * 100 if total_lessons else 0.0
+        if is_complete:
+            if enrolment.completed_at is None:
+                enrolment.completed_at = datetime.now(timezone.utc)
+            award_course_certificate(enrolment)
+        else:
+            enrolment.completed_at = None
+            certificate = AcademyCertificate.query.filter_by(
+                student_id=enrolment.student_id,
+                course_id=course_id,
+                certificate_type="completion",
+                status="issued",
+            ).first()
+            if certificate:
+                certificate.status = "revoked"
+                certificate.revoked_at = datetime.now(timezone.utc)
+                certificate.revoked_reason = "Course published lessons changed."
+
+
 @public_bp.route("/")
 def home():
     services = Service.query.filter_by(published=True).order_by(Service.display_order.asc()).all()
     recent_articles = Article.query.filter_by(status="published").order_by(Article.published_at.desc().nullslast()).limit(3).all()
     projects = Project.query.filter_by(status="published").order_by(Project.published_at.desc().nullslast()).limit(3).all()
-    return render_template("public/home.html", services=services, recent_articles=recent_articles, projects=projects)
+    featured_courses = Course.query.filter_by(status="published").order_by(
+        Course.is_featured.desc(),
+        Course.published_at.desc().nullslast(),
+    ).limit(2).all()
+    return render_template(
+        "public/home.html",
+        services=services,
+        recent_articles=recent_articles,
+        projects=projects,
+        featured_courses=featured_courses,
+    )
 
 
 @public_bp.route("/academy")
@@ -534,6 +594,18 @@ def verify_certificate():
     result = None
     if request.method == "POST":
         code = request.form.get("code", "").strip()
+        cert = AcademyCertificate.query.filter(
+            (AcademyCertificate.verification_code == code)
+            | (AcademyCertificate.certificate_number == code)
+        ).first()
+        if cert and cert.status == "issued":
+            result = "valid"
+        elif cert and cert.status == "revoked":
+            result = "revoked"
+        else:
+            result = "invalid"
+    elif request.args.get("code"):
+        code = request.args.get("code", "").strip()
         cert = AcademyCertificate.query.filter(
             (AcademyCertificate.verification_code == code)
             | (AcademyCertificate.certificate_number == code)
@@ -740,8 +812,24 @@ def student_orders():
 def student_certificates():
     if not isinstance(current_user, Student):
         abort(403)
-    certificates = AcademyCertificate.query.filter_by(student_id=current_user.id).order_by(AcademyCertificate.issue_date.desc()).all()
+    certificates = AcademyCertificate.query.filter_by(
+        student_id=current_user.id,
+        status="issued",
+    ).order_by(AcademyCertificate.issue_date.desc()).all()
     return render_template("student/certificates.html", certificates=certificates)
+
+
+@student_bp.route("/certificates/<int:certificate_id>.pdf")
+@login_required
+def student_certificate_pdf(certificate_id):
+    if not isinstance(current_user, Student):
+        abort(403)
+    certificate = AcademyCertificate.query.filter_by(
+        id=certificate_id,
+        student_id=current_user.id,
+        status="issued",
+    ).first_or_404()
+    return certificate_pdf_response(certificate)
 
 
 @student_bp.route("/courses/<slug>")
@@ -755,9 +843,56 @@ def student_course_detail(slug):
         flash("You are not enrolled in this course.", "error")
         return redirect(url_for("public.academy_course_detail", slug=slug))
     lessons = CourseLesson.query.filter_by(course_id=course.id, status="published").order_by(CourseLesson.order_index.asc(), CourseLesson.id.asc()).all()
+    requested_lesson_id = request.args.get("lesson_id", type=int)
+    selected_lesson = next(
+        (lesson for lesson in lessons if lesson.id == requested_lesson_id),
+        None,
+    )
+    if selected_lesson is None:
+        selected_lesson = next(
+            (lesson for lesson in lessons if lesson.id == enrolment.last_lesson_id),
+            None,
+        )
+    if selected_lesson is None:
+        selected_lesson = next(
+            (
+                lesson
+                for lesson in lessons
+                if not any(
+                    entry.lesson_id == lesson.id and entry.completed
+                    for entry in enrolment.lesson_progress
+                )
+            ),
+            lessons[0] if lessons else None,
+        )
+    if selected_lesson:
+        accessed_at = datetime.now(timezone.utc)
+        lesson_progress = LessonProgress.query.filter_by(
+            enrolment_id=enrolment.id,
+            lesson_id=selected_lesson.id,
+        ).first()
+        if not lesson_progress:
+            lesson_progress = LessonProgress(
+                enrolment_id=enrolment.id,
+                student_id=current_user.id,
+                lesson_id=selected_lesson.id,
+            )
+            db.session.add(lesson_progress)
+        lesson_progress.updated_at = accessed_at
+        enrolment.last_lesson_id = selected_lesson.id
+        enrolment.updated_at = accessed_at
+        db.session.commit()
     progress_by_lesson = {entry.lesson_id: entry for entry in enrolment.lesson_progress}
     quizzes = Quiz.query.filter_by(course_id=course.id, status="published").order_by(Quiz.id.asc()).all()
-    return render_template("student/course_detail.html", course=course, enrolment=enrolment, lessons=lessons, progress_by_lesson=progress_by_lesson, quizzes=quizzes)
+    return render_template(
+        "student/course_detail.html",
+        course=course,
+        enrolment=enrolment,
+        lessons=lessons,
+        progress_by_lesson=progress_by_lesson,
+        quizzes=quizzes,
+        current_lesson_id=selected_lesson.id if selected_lesson else None,
+    )
 
 
 @student_bp.route("/courses/<slug>/lessons/<int:lesson_id>/complete", methods=["POST"])
@@ -772,15 +907,14 @@ def complete_lesson(slug, lesson_id):
     if not progress:
         progress = LessonProgress(enrolment_id=enrolment.id, student_id=current_user.id, lesson_id=lesson.id)
         db.session.add(progress)
-    progress.completed = True
-    progress.completed_at = datetime.now(timezone.utc)
+    accessed_at = datetime.now(timezone.utc)
+    if not progress.completed:
+        progress.completed = True
+        progress.completed_at = accessed_at
+    progress.updated_at = accessed_at
     enrolment.last_lesson_id = lesson.id
-    total_lessons = CourseLesson.query.filter_by(course_id=course.id, status="published").count()
-    completed_lessons = LessonProgress.query.filter_by(enrolment_id=enrolment.id, completed=True).count()
-    enrolment.progress = min(100.0, (completed_lessons / total_lessons) * 100) if total_lessons else 0.0
-    if enrolment.progress >= 100:
-        enrolment.completed_at = datetime.now(timezone.utc)
-        award_course_certificate(enrolment)
+    enrolment.updated_at = accessed_at
+    recalculate_course_progress(course.id)
     db.session.commit()
     flash("Lesson progress saved.", "success")
     return redirect(url_for("student.student_course_detail", slug=slug))
@@ -1459,6 +1593,7 @@ def lesson_create(course_id):
     course.review_status = "draft"
     course.published_at = None
     write_instructor_audit("lesson_created", "lesson", None, instructor_id=current_user.id, details=course.title)
+    recalculate_course_progress(course.id)
     db.session.commit()
     flash("Lesson saved as a draft.", "success")
     return redirect(url_for("instructor.course_edit", course_id=course.id))
@@ -1486,6 +1621,9 @@ def lesson_edit(course_id, lesson_id):
     lesson.module_title = request.form.get("module_title", "").strip()[:160] or None
     lesson.content = sanitize_instructor_html(request.form.get("content", "").strip()) or None
     lesson.is_preview = request.form.get("is_preview") == "on"
+    lesson_status = request.form.get("status")
+    if lesson_status in {"draft", "published"}:
+        lesson.status = lesson_status
     video_url = request.form.get("external_video_url", "").strip() or None
     if video_url:
         parsed_video_url = urlsplit(video_url)
@@ -1515,6 +1653,7 @@ def lesson_edit(course_id, lesson_id):
         course.review_status = "draft"
         course.published_at = None
     write_instructor_audit("lesson_updated", "lesson", lesson.id, instructor_id=current_user.id)
+    recalculate_course_progress(course.id)
     db.session.commit()
     flash("Lesson updated.", "success")
     return redirect(url_for("instructor.course_edit", course_id=course.id))
@@ -1525,8 +1664,8 @@ def lesson_edit(course_id, lesson_id):
 def lesson_delete(course_id, lesson_id):
     course = instructor_owned_course(course_id)
     lesson = CourseLesson.query.filter_by(id=lesson_id, course_id=course.id).first_or_404()
-    if LessonProgress.query.filter_by(lesson_id=lesson.id).count() or Quiz.query.filter_by(lesson_id=lesson.id).count():
-        flash("This lesson is referenced by student progress or an assessment and cannot be deleted.", "error")
+    if Quiz.query.filter_by(lesson_id=lesson.id).count():
+        flash("This lesson is referenced by an assessment and cannot be deleted.", "error")
         return redirect(url_for("instructor.course_edit", course_id=course.id))
     if lesson.resource_path:
         root = get_private_academy_upload_root().resolve()
@@ -1537,11 +1676,17 @@ def lesson_delete(course_id, lesson_id):
             abort(404)
         file_path.unlink(missing_ok=True)
     lesson_id_value = lesson.id
+    CourseEnrollment.query.filter_by(course_id=course.id, last_lesson_id=lesson.id).update(
+        {CourseEnrollment.last_lesson_id: None},
+        synchronize_session=False,
+    )
     db.session.delete(lesson)
     course.status = "draft"
     course.review_status = "draft"
     course.published_at = None
     write_instructor_audit("lesson_deleted", "lesson", lesson_id_value, instructor_id=current_user.id)
+    db.session.flush()
+    recalculate_course_progress(course.id)
     db.session.commit()
     flash("Lesson deleted.", "success")
     return redirect(url_for("instructor.course_edit", course_id=course.id))
@@ -1714,28 +1859,54 @@ def certificate_pdf(certificate_id):
         Course.instructor_id == current_user.id,
         AcademyCertificate.status == "issued",
     ).first_or_404()
+    return certificate_pdf_response(certificate)
+
+
+def certificate_pdf_response(certificate):
     from reportlab.lib.pagesizes import landscape, letter
+    from reportlab.pdfbase.pdfmetrics import stringWidth
     from reportlab.pdfgen import canvas
 
     output = BytesIO()
     page = canvas.Canvas(output, pagesize=landscape(letter))
     width, height = landscape(letter)
-    page.setStrokeColorRGB(0.08, 0.28, 0.52)
+    page.setStrokeColorRGB(0.035, 0.161, 0.294)
     page.setLineWidth(3)
     page.rect(28, 28, width - 56, height - 56)
-    page.setFillColorRGB(0.04, 0.22, 0.42)
+    page.setStrokeColorRGB(0.788, 0.635, 0.153)
+    page.setLineWidth(1)
+    page.rect(38, 38, width - 76, height - 76)
+    page.setFillColorRGB(0.035, 0.161, 0.294)
     page.setFont("Helvetica-Bold", 15)
     page.drawCentredString(width / 2, height - 92, "AXIOM GATEWAY CONSULT ACADEMY")
+    page.setFillColorRGB(0.788, 0.635, 0.153)
     page.setFont("Helvetica-Bold", 30)
-    page.drawCentredString(width / 2, height - 155, "ADMISSION CERTIFICATE")
+    certificate_title = "ADMISSION CERTIFICATE" if certificate.certificate_type == "admission" else "COURSE COMPLETION CERTIFICATE"
+    page.drawCentredString(width / 2, height - 155, certificate_title)
     page.setFillColorRGB(0.15, 0.18, 0.22)
     page.setFont("Helvetica", 14)
     page.drawCentredString(width / 2, height - 210, "This confirms that")
     page.setFont("Helvetica-Bold", 24)
-    page.drawCentredString(width / 2, height - 250, certificate.student.full_name)
+    student_name = certificate.student.full_name
+    name_font_size = 24
+    while name_font_size > 14 and stringWidth(student_name, "Helvetica-Bold", name_font_size) > width - 120:
+        name_font_size -= 1
+    page.setFont("Helvetica-Bold", name_font_size)
+    page.drawCentredString(width / 2, height - 250, student_name)
     page.setFont("Helvetica", 14)
-    page.drawCentredString(width / 2, height - 290, f"has been admitted to {certificate.course.title}")
-    page.drawCentredString(width / 2, height - 325, f"Instructor: {certificate.issued_by_instructor.full_name if certificate.issued_by_instructor else certificate.course.instructor_name}")
+    course_statement = (
+        f"has been admitted to {certificate.course.title}"
+        if certificate.certificate_type == "admission"
+        else f"has successfully completed {certificate.course.title}"
+    )
+    course_font_size = 14
+    while course_font_size > 10 and stringWidth(course_statement, "Helvetica", course_font_size) > width - 120:
+        course_font_size -= 1
+    page.setFont("Helvetica", course_font_size)
+    page.drawCentredString(width / 2, height - 290, course_statement)
+    if certificate.certificate_type == "admission":
+        page.setFont("Helvetica", 14)
+        page.drawCentredString(width / 2, height - 325, f"Instructor: {certificate.issued_by_instructor.full_name if certificate.issued_by_instructor else certificate.course.instructor_name}")
     page.drawCentredString(width / 2, height - 360, f"Issued: {certificate.issue_date.strftime('%d %B %Y')}")
     page.setFont("Helvetica", 10)
     page.drawCentredString(width / 2, 78, f"Certificate {certificate.certificate_number} · Verification code {certificate.verification_code}")
@@ -2044,6 +2215,7 @@ def instructor_course_decision(course_id):
     if decision == "approved":
         CourseLesson.query.filter_by(course_id=course.id, status="draft").update({CourseLesson.status: "published"}, synchronize_session=False)
         Quiz.query.filter_by(course_id=course.id, status="draft").update({Quiz.status: "published"}, synchronize_session=False)
+        recalculate_course_progress(course.id)
     if course.instructor:
         create_instructor_notification(course.instructor, "course", f"Your course '{course.title}' was {decision}.", url_for("instructor.course_edit", course_id=course.id), f"course-decision-{course.id}-{int(datetime.now(timezone.utc).timestamp())}")
     write_instructor_audit(f"course_{decision}", "course", course.id, instructor_id=course.instructor_id, admin_id=current_user.id)
@@ -2438,6 +2610,8 @@ def lesson_new(course_id):
             status="published" if request.form.get("publish") else "draft",
         )
         db.session.add(lesson)
+        db.session.flush()
+        recalculate_course_progress(course.id)
         db.session.commit()
         if lesson.status == "published":
             send_academy_notice("Axiom Academy lesson published", [get_admin_notification_recipient()], f"Lesson published for {course.title}: {lesson.title}.")

@@ -1,46 +1,548 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Instructor Portal{% endblock %} | Axiom Academy</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>{% block title %}Instructor Portal{% endblock %} | Axiom Academy</title>
+    <meta name="theme-color" content="#09294B">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['DM Sans', 'sans-serif'],
+                        display: ['DM Serif Display', 'serif']
+                    },
+                    colors: {
+                        brand: {
+                            navy: '#09294B',
+                            deep: '#061C34',
+                            gold: '#C9A227',
+                            goldDark: '#A78319',
+                            ink: '#243447',
+                            muted: '#64748B',
+                            canvas: '#F6F8FB'
+                        }
+                    },
+                    boxShadow: {
+                        soft: '0 2px 12px rgba(9, 41, 75, 0.05)',
+                        panel: '0 8px 30px rgba(9, 41, 75, 0.08)'
+                    }
+                }
+            }
+        };
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Serif+Display&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/brand.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --navy: #09294B;
+            --navy-deep: #061C34;
+            --gold: #C9A227;
+            --border: #E2E8F0;
+            --canvas: #F6F8FB;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: var(--canvas);
+            color: #243447;
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        a, button {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        a:focus-visible,
+        button:focus-visible {
+            outline: 3px solid rgba(201, 162, 39, 0.65);
+            outline-offset: 3px;
+        }
+
+        .instructor-header {
+            height: 72px;
+            background: rgba(255, 255, 255, 0.97);
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(14px);
+        }
+
+        .instructor-logo {
+            display: block;
+            width: auto;
+            max-height: 42px;
+            object-fit: contain;
+        }
+
+        .instructor-sidebar {
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: #fff;
+            padding: 18px 12px;
+            box-shadow: 0 2px 12px rgba(9, 41, 75, 0.035);
+        }
+
+        .instructor-nav-heading {
+            padding: 0 12px;
+            margin: 18px 0 8px;
+            color: #94A3B8;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: .13em;
+            text-transform: uppercase;
+        }
+
+        .instructor-nav-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-height: 44px;
+            padding: 11px 12px;
+            margin-bottom: 3px;
+            border-radius: 10px;
+            color: #526176;
+            font-size: 13px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: background-color .16s ease, color .16s ease;
+        }
+
+        .instructor-nav-link:hover {
+            background: #F4F7FA;
+            color: var(--navy);
+        }
+
+        .instructor-nav-link .nav-icon {
+            width: 18px;
+            text-align: center;
+            color: #8795A8;
+        }
+
+        .instructor-nav-link[aria-current="page"] {
+            color: var(--navy);
+            background: #F8F3E5;
+            box-shadow: inset 3px 0 0 var(--gold);
+        }
+
+        .instructor-nav-link[aria-current="page"] .nav-icon {
+            color: var(--gold);
+        }
+
+        .instructor-action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-height: 40px;
+            padding: 9px 14px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            transition: background-color .16s ease, border-color .16s ease;
+        }
+
+        .instructor-action-secondary {
+            border: 1px solid var(--border);
+            background: #fff;
+            color: var(--navy);
+        }
+
+        .instructor-action-secondary:hover {
+            border-color: #CBD5E1;
+            background: #F8FAFC;
+        }
+
+        .instructor-action-primary {
+            border: 1px solid var(--navy);
+            background: var(--navy);
+            color: #fff;
+        }
+
+        .instructor-action-primary:hover {
+            background: var(--navy-deep);
+        }
+
+        .instructor-flash {
+            display: flex;
+            align-items: flex-start;
+            gap: 11px;
+            padding: 14px 16px;
+            border: 1px solid;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .instructor-main {
+            min-width: 0;
+        }
+
+        @media (max-width: 1023px) {
+            .instructor-header {
+                height: 64px;
+            }
+
+            .instructor-logo {
+                max-height: 36px;
+            }
+
+            .instructor-mobile-sidebar {
+                position: fixed;
+                z-index: 60;
+                top: 64px;
+                bottom: 0;
+                left: 0;
+                width: min(300px, 86vw);
+                overflow-y: auto;
+                border-radius: 0 16px 16px 0;
+                padding: 20px 14px;
+                box-shadow: 12px 0 36px rgba(6, 28, 52, .16);
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                scroll-behavior: auto !important;
+                animation-duration: .01ms !important;
+                transition-duration: .01ms !important;
+            }
+        }
+    </style>
+
+    {% block extra_head %}{% endblock %}
 </head>
-<body class="min-h-screen bg-slate-50 text-slate-800 antialiased">
-  <header class="border-b border-slate-200 bg-white">
-    <div class="mx-auto flex max-w-screen-2xl items-center justify-between px-4 py-3 sm:px-6">
-      <a href="{{ url_for('public.academy_home') }}" class="flex items-center gap-3">
-        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Axiom Gateway Consult" class="h-10 w-auto">
-        <span class="border-l border-slate-200 pl-3 text-sm font-semibold text-slate-600">Instructor Portal</span>
-      </a>
-      {% if current_user.is_authenticated and current_user.__class__.__name__ == 'Instructor' %}
-      <div class="flex items-center gap-3 text-sm">
-        <span class="hidden font-medium text-slate-600 sm:block">{{ current_user.full_name }}</span>
-        <a href="{{ url_for('instructor.profile') }}" class="rounded-md border border-slate-200 px-3 py-2 font-semibold hover:bg-slate-50">Profile</a>
-        <a href="{{ url_for('instructor.logout') }}" class="rounded-md border border-slate-200 px-3 py-2 font-semibold hover:bg-slate-50">Sign out</a>
-      </div>
-      {% endif %}
+
+<body class="min-h-screen antialiased">
+
+    {% set is_instructor = current_user.is_authenticated and current_user.__class__.__name__ == 'Instructor' %}
+    {% set is_approved_instructor = is_instructor and current_user.status == 'approved' %}
+
+    <!-- Top navigation -->
+    <header class="instructor-header sticky top-0 z-50">
+        <div class="mx-auto flex h-full max-w-screen-2xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+
+            <div class="flex min-w-0 items-center gap-3 sm:gap-4">
+
+                {% if is_approved_instructor %}
+                <button
+                    id="instructor-menu-toggle"
+                    type="button"
+                    class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-brand-navy transition hover:bg-slate-100 lg:hidden"
+                    aria-label="Open instructor navigation"
+                    aria-expanded="false"
+                    aria-controls="instructor-sidebar">
+                    <i id="instructor-menu-icon" class="fa-solid fa-bars text-lg" aria-hidden="true"></i>
+                </button>
+                {% endif %}
+
+                <a href="{{ url_for('public.academy_home') }}"
+                   class="flex min-w-0 items-center gap-3">
+
+                    <img
+                        src="{{ url_for('static', filename='images/logo.png') }}"
+                        alt="Axiom Gateway Consult"
+                        class="instructor-logo">
+
+                    <span class="hidden border-l border-slate-200 pl-3 sm:block">
+                        <span class="block text-sm font-extrabold tracking-tight text-brand-navy">
+                            Axiom Academy
+                        </span>
+                        <span class="mt-0.5 block text-[10px] font-semibold tracking-wider text-slate-500">
+                            INSTRUCTOR WORKSPACE
+                        </span>
+                    </span>
+                </a>
+            </div>
+
+            {% if is_instructor %}
+            <div class="flex shrink-0 items-center gap-2 sm:gap-3">
+
+                <div class="hidden text-right sm:block">
+                    <p class="max-w-44 truncate text-sm font-bold text-brand-navy">
+                        {{ current_user.full_name }}
+                    </p>
+                    <p class="mt-0.5 text-[11px] font-medium text-slate-500">
+                        Instructor
+                    </p>
+                </div>
+
+                <a href="{{ url_for('instructor.profile') }}"
+                   class="instructor-action instructor-action-secondary"
+                   aria-label="View instructor profile">
+                    <i class="fa-regular fa-user" aria-hidden="true"></i>
+                    <span class="hidden sm:inline">Profile</span>
+                </a>
+
+                <a href="{{ url_for('instructor.logout') }}"
+                   class="instructor-action instructor-action-primary">
+                    <i class="fa-solid fa-arrow-right-from-bracket" aria-hidden="true"></i>
+                    <span class="hidden sm:inline">Sign out</span>
+                </a>
+            </div>
+            {% endif %}
+
+        </div>
+    </header>
+
+    {% if is_approved_instructor %}
+    <button
+        id="instructor-sidebar-backdrop"
+        type="button"
+        class="fixed inset-0 z-50 hidden bg-brand-deep/40 backdrop-blur-[2px] lg:hidden"
+        aria-label="Close instructor navigation"
+        tabindex="-1">
+    </button>
+    {% endif %}
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <section class="mx-auto max-w-screen-2xl space-y-3 px-4 pt-5 sm:px-6 lg:px-8"
+                 aria-label="Notifications"
+                 aria-live="polite">
+
+            {% for category, message in messages %}
+                {% set cat = category or 'success' %}
+
+                <div class="instructor-flash
+                    {% if cat in ['error', 'danger'] %}
+                        border-rose-200 bg-rose-50 text-rose-800
+                    {% elif cat == 'warning' %}
+                        border-amber-200 bg-amber-50 text-amber-900
+                    {% elif cat == 'info' %}
+                        border-sky-200 bg-sky-50 text-sky-900
+                    {% else %}
+                        border-emerald-200 bg-emerald-50 text-emerald-900
+                    {% endif %}">
+
+                    <i class="fa-solid
+                        {% if cat in ['error', 'danger'] %}
+                            fa-circle-exclamation
+                        {% elif cat == 'warning' %}
+                            fa-triangle-exclamation
+                        {% elif cat == 'info' %}
+                            fa-circle-info
+                        {% else %}
+                            fa-circle-check
+                        {% endif %} mt-0.5"
+                        aria-hidden="true"></i>
+
+                    <p class="min-w-0 flex-1">{{ message }}</p>
+                </div>
+            {% endfor %}
+
+        </section>
+        {% endif %}
+    {% endwith %}
+
+    {% if is_approved_instructor %}
+
+    <!-- Instructor application workspace -->
+    <div class="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
+
+        <div class="grid grid-cols-1 items-start gap-6 lg:grid-cols-[250px_minmax(0,1fr)] lg:gap-8">
+
+            <!-- Sidebar -->
+            <aside
+                id="instructor-sidebar"
+                class="instructor-sidebar instructor-mobile-sidebar hidden lg:sticky lg:top-24 lg:block"
+                aria-label="Instructor navigation">
+
+                <div class="mb-5 flex items-center justify-between px-2">
+                    <div>
+                        <p class="text-sm font-extrabold text-brand-navy">
+                            Instructor Workspace
+                        </p>
+                        <p class="mt-1 text-xs text-slate-500">
+                            Manage your teaching
+                        </p>
+                    </div>
+
+                    <button
+                        id="instructor-sidebar-close"
+                        type="button"
+                        class="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 lg:hidden"
+                        aria-label="Close instructor navigation">
+                        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                    </button>
+                </div>
+
+                <nav>
+                    <p class="instructor-nav-heading">Overview</p>
+
+                    {% for endpoint, label, icon in [
+                        ('instructor.dashboard', 'Dashboard', 'fa-table-columns'),
+                        ('instructor.analytics', 'Analytics', 'fa-chart-line'),
+                        ('instructor.notifications', 'Notifications', 'fa-bell')
+                    ] %}
+                    <a href="{{ url_for(endpoint) }}"
+                       {% if request.endpoint == endpoint %}aria-current="page"{% endif %}
+                       class="instructor-nav-link">
+                        <i class="nav-icon fa-solid {{ icon }}" aria-hidden="true"></i>
+                        <span>{{ label }}</span>
+                    </a>
+                    {% endfor %}
+
+                    <p class="instructor-nav-heading">Teaching</p>
+
+                    {% for endpoint, label, icon in [
+                        ('instructor.courses', 'My Courses', 'fa-book-open'),
+                        ('instructor.students', 'Students', 'fa-users'),
+                        ('instructor.certificates', 'Certificates', 'fa-certificate')
+                    ] %}
+                    <a href="{{ url_for(endpoint) }}"
+                       {% if request.endpoint == endpoint %}aria-current="page"{% endif %}
+                       class="instructor-nav-link">
+                        <i class="nav-icon fa-solid {{ icon }}" aria-hidden="true"></i>
+                        <span>{{ label }}</span>
+                    </a>
+                    {% endfor %}
+
+                    <p class="instructor-nav-heading">Finance</p>
+
+                    {% for endpoint, label, icon in [
+                        ('instructor.earnings', 'Earnings', 'fa-wallet'),
+                        ('instructor.payout_profile', 'Payout Profile', 'fa-building-columns')
+                    ] %}
+                    <a href="{{ url_for(endpoint) }}"
+                       {% if request.endpoint == endpoint %}aria-current="page"{% endif %}
+                       class="instructor-nav-link">
+                        <i class="nav-icon fa-solid {{ icon }}" aria-hidden="true"></i>
+                        <span>{{ label }}</span>
+                    </a>
+                    {% endfor %}
+                </nav>
+
+                <div class="mt-6 border-t border-slate-100 pt-4">
+                    <a href="{{ url_for('public.academy_home') }}"
+                       class="instructor-nav-link">
+                        <i class="nav-icon fa-solid fa-arrow-left" aria-hidden="true"></i>
+                        <span>Academy Home</span>
+                    </a>
+                </div>
+            </aside>
+
+            <!-- Main content -->
+            <main id="instructor-main" class="instructor-main">
+                {% block content %}{% endblock %}
+            </main>
+
+        </div>
     </div>
-  </header>
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}<div class="mx-auto max-w-screen-2xl space-y-2 px-4 pt-5 sm:px-6">
-      {% for category, message in messages %}<div class="rounded-md border px-4 py-3 text-sm {% if category == 'error' %}border-rose-200 bg-rose-50 text-rose-800{% else %}border-emerald-200 bg-emerald-50 text-emerald-800{% endif %}">{{ message }}</div>{% endfor %}
-    </div>{% endif %}
-  {% endwith %}
-  {% if current_user.is_authenticated and current_user.__class__.__name__ == 'Instructor' and current_user.status == 'approved' %}
-  <div class="mx-auto grid max-w-screen-2xl grid-cols-1 gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[220px_minmax(0,1fr)]">
-    <aside class="rounded-lg border border-slate-200 bg-white p-3">
-      <nav class="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-1">
-        {% for endpoint, label, icon in [('instructor.dashboard','Dashboard','fa-table-columns'),('instructor.courses','My courses','fa-book-open'),('instructor.students','Students','fa-users'),('instructor.certificates','Certificates','fa-certificate'),('instructor.earnings','Earnings','fa-wallet'),('instructor.payout_profile','Payout profile','fa-building-columns'),('instructor.analytics','Analytics','fa-chart-line'),('instructor.notifications','Notifications','fa-bell')] %}
-        <a href="{{ url_for(endpoint) }}" class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-semibold {% if request.endpoint == endpoint %}bg-blue-50 text-blue-700{% else %}text-slate-600 hover:bg-slate-50{% endif %}"><i class="fa-solid {{ icon }} w-4 text-center"></i>{{ label }}</a>
-        {% endfor %}
-      </nav>
-    </aside>
-    <main class="min-w-0">{% block content %}{% endblock %}</main>
-  </div>
-  {% else %}
-  <main class="mx-auto max-w-3xl px-4 py-8 sm:px-6">{% block auth_content %}{% endblock %}</main>
-  {% endif %}
+
+    {% else %}
+
+    <!-- Login, registration, approval and other non-workspace pages -->
+    <main class="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:py-12">
+        {% block auth_content %}{% endblock %}
+    </main>
+
+    {% endif %}
+
+    <!-- Responsive navigation behavior -->
+    {% if is_approved_instructor %}
+    <script>
+        (() => {
+            const toggle = document.getElementById('instructor-menu-toggle');
+            const sidebar = document.getElementById('instructor-sidebar');
+            const backdrop = document.getElementById('instructor-sidebar-backdrop');
+            const closeButton = document.getElementById('instructor-sidebar-close');
+            const icon = document.getElementById('instructor-menu-icon');
+
+            if (!toggle || !sidebar || !backdrop || !icon) return;
+
+            const mobileQuery = window.matchMedia('(max-width: 1023px)');
+
+            function openMenu() {
+                if (!mobileQuery.matches) return;
+
+                sidebar.classList.remove('hidden');
+                backdrop.classList.remove('hidden');
+
+                toggle.setAttribute('aria-expanded', 'true');
+                toggle.setAttribute('aria-label', 'Close instructor navigation');
+
+                icon.classList.remove('fa-bars');
+                icon.classList.add('fa-xmark');
+
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeMenu() {
+                if (mobileQuery.matches) {
+                    sidebar.classList.add('hidden');
+                }
+
+                backdrop.classList.add('hidden');
+
+                toggle.setAttribute('aria-expanded', 'false');
+                toggle.setAttribute('aria-label', 'Open instructor navigation');
+
+                icon.classList.remove('fa-xmark');
+                icon.classList.add('fa-bars');
+
+                document.body.style.overflow = '';
+            }
+
+            toggle.addEventListener('click', () => {
+                const expanded = toggle.getAttribute('aria-expanded') === 'true';
+
+                if (expanded) {
+                    closeMenu();
+                } else {
+                    openMenu();
+                }
+            });
+
+            if (closeButton) {
+                closeButton.addEventListener('click', closeMenu);
+            }
+
+            backdrop.addEventListener('click', closeMenu);
+
+            sidebar.querySelectorAll('a').forEach((link) => {
+                link.addEventListener('click', () => {
+                    if (mobileQuery.matches) closeMenu();
+                });
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' &&
+                    toggle.getAttribute('aria-expanded') === 'true') {
+                    closeMenu();
+                    toggle.focus();
+                }
+            });
+
+            mobileQuery.addEventListener('change', (event) => {
+                if (!event.matches) {
+                    closeMenu();
+                    sidebar.classList.remove('hidden');
+                } else {
+                    sidebar.classList.add('hidden');
+                }
+            });
+        })();
+    </script>
+    {% endif %}
+
+    {% block extra_scripts %}{% endblock %}
+
 </body>
 </html>

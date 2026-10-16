@@ -1,161 +1,211 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
+<html lang="en" class="scroll-smooth h-full">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="{% block meta_description %}{{ company_settings.meta_description or 'Axiom Gateway Consult helps organizations improve performance through technology, consulting and capacity development.' }}{% endblock %}">
   <link rel="canonical" href="{% block canonical_url %}{{ (company_settings.canonical_origin or config.CANONICAL_ORIGIN)|trim('/') }}{{ request.path }}{% endblock %}">
-  <title>{% block title %}Axiom Gateway Consult{% endblock %}</title>
-  
-  <!-- Favicon -->
-  <link rel="icon" href="{{ company_settings.favicon_url or url_for('static', filename='images/favicon.svg') }}">
-  
-  <!-- Tailwind CSS Play CDN & Configuration -->
+  <title>{% block title %}Axiom Gateway Consult | Technology, Consulting & Capacity Building{% endblock %}</title>
+
+  <link rel="icon" href="{{ company_settings.favicon_url or url_for('static', filename='images/favicon.svg') }}" type="image/svg+xml">
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           fontFamily: {
-            sans: ['Inter', 'sans-serif'],
+            sans: ['Plus Jakarta Sans', 'sans-serif'],
+            heading: ['Outfit', 'sans-serif'],
           },
+          colors: {
+            brand: {
+              50: '#f0f7ff', 100: '#e0effe', 200: '#bae0fd', 300: '#7cc8fc', 400: '#36afef',
+              500: '#0c92e1', 600: '#0074c2', 700: '#025ca1', 800: '#064e85', 900: '#0b416f', 950: '#07294a',
+            },
+            navy: { 800: '#0d1b2a', 900: '#091e3a', 950: '#040d1a' },
+            gold: { 400: '#fbbf24', 500: '#f59e0b', 600: '#d97706', 700: '#b45309' }
+          },
+          boxShadow: {
+            'glow': '0 0 25px -5px rgba(37, 99, 235, 0.25)',
+            'glass': '0 8px 32px 0 rgba(15, 23, 42, 0.08)',
+          }
         }
       }
     }
   </script>
 
-  <!-- Google Fonts: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-  <!-- FontAwesome Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    .bg-grid-pattern {
+      background-size: 30px 30px;
+      background-image: linear-gradient(to right, rgba(15, 23, 42, 0.03) 1px, transparent 1px),
+                        linear-gradient(to bottom, rgba(15, 23, 42, 0.03) 1px, transparent 1px);
+    }
+  </style>
 </head>
-<body class="font-sans bg-white text-slate-800 antialiased flex flex-col min-h-screen selection:bg-blue-600 selection:text-white">
+<body class="font-sans bg-slate-50 text-slate-800 antialiased flex flex-col min-h-screen selection:bg-brand-600 selection:text-white">
 
-  <!-- Header / Navigation Bar -->
-  <header class="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
+  {# ---------- Reusable pieces ---------- #}
+  {% set nav_items = [
+    ('Home', url_for('public.home')),
+    ('About Us', url_for('public.about')),
+    ('Services', url_for('public.services')),
+    ('Who We Serve', url_for('public.who_we_serve')),
+    ('Projects', url_for('public.projects')),
+    ('Contact', url_for('public.contact')),
+  ] %}
+
+  {% macro auth_buttons(mobile=false) %}
+    {% set outline = 'inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-brand-300 hover:text-brand-600 font-semibold text-sm transition-all' %}
+    {% set w = ' w-full' if mobile else '' %}
+    {% if current_user.is_authenticated and current_user.__class__.__name__ == 'Instructor' %}
+      <a href="{{ url_for('instructor.dashboard') }}" class="{{ outline }}{{ w }}"><i class="fa-solid fa-gauge-high text-brand-600"></i> Instructor Hub</a>
+      <a href="{{ url_for('instructor.logout') }}" class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm transition-all shadow-md shadow-slate-900/10{{ w }}">Logout</a>
+    {% elif current_user.is_authenticated and current_user.__class__.__name__ == 'Student' %}
+      <a href="{{ url_for('student.dashboard') }}" class="{{ outline }}{{ w }}"><i class="fa-solid fa-user-graduate text-brand-600"></i> Dashboard</a>
+      <a href="{{ url_for('student.student_logout') }}" class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm transition-all shadow-md shadow-brand-600/20{{ w }}">Logout</a>
+    {% elif current_user.is_authenticated and current_user.__class__.__name__ == 'AdminUser' %}
+      <a href="{{ url_for('admin.dashboard') }}" class="{{ outline }}{{ w }}"><i class="fa-solid fa-user-gear text-brand-600"></i> Admin Panel</a>
+      <a href="{{ url_for('admin.admin_logout') }}" class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-slate-900 text-white font-semibold text-sm transition-all{{ w }}">Logout</a>
+    {% else %}
+      <a href="{{ url_for('student.student_login') }}" class="{{ outline }}{{ w }}">Login</a>
+      <a href="{{ url_for('student.student_register') }}" class="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-gradient-to-r from-navy-900 to-brand-700 hover:from-navy-800 hover:to-brand-600 text-white font-semibold text-sm transition-all shadow-md shadow-brand-900/20{{ w }}">Get Started</a>
+    {% endif %}
+  {% endmacro %}
+
+  {# ---------- HEADER: centered logo, contact left, auth right, nav row below ---------- #}
+  <header class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200/80">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between h-20">
-        
-        <!-- Brand / Logo -->
-        <a class="flex items-center gap-3 shrink-0 group focus:outline-hidden" href="{{ url_for('public.home') }}">
-          <img src="{{ url_for('static', filename='images/logo.png') }}" alt="{{ company_settings.company_name or 'Axiom Gateway Consult' }} logo" class="h-10 w-auto object-contain">
-        </a>
 
-        <!-- Desktop Navigation Links -->
-        <nav class="hidden lg:flex items-center space-x-1 xl:space-x-2" aria-label="Main navigation">
-          <!-- <a href="{{ url_for('public.home') }}" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:text-blue-600 hover:bg-slate-50 transition">Home</a> -->
-          <a href="{{ url_for('public.about') }}" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:text-blue-600 hover:bg-slate-50 transition">About Us</a>
-          <a href="{{ url_for('public.services') }}" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:text-blue-600 hover:bg-slate-50 transition">Our Services</a>
-          <a href="{{ url_for('public.who_we_serve') }}" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:text-blue-600 hover:bg-slate-50 transition">Who We Serve</a>
-          <a href="{{ url_for('public.projects') }}" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:text-blue-600 hover:bg-slate-50 transition">Projects</a>
-          <!-- <a href="{{ url_for('public.insights') }}" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:text-blue-600 hover:bg-slate-50 transition">Insights</a> -->
-          <a href="{{ url_for('public.academy_home') }}" {% if request.path.startswith('/academy') %}aria-current="page"{% endif %} class="px-3 py-2 rounded-lg text-sm font-semibold {% if request.path.startswith('/academy') %}bg-blue-50 text-blue-700{% else %}text-slate-700 hover:text-blue-600 hover:bg-slate-50{% endif %} transition">Academy</a>
-          <details class="relative">
-            <summary class="list-none cursor-pointer px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:text-blue-600 hover:bg-slate-50 transition">For instructors <i class="fa-solid fa-chevron-down ml-1 text-[10px]"></i></summary>
-            <div class="absolute right-0 top-full mt-2 w-52 rounded-xl border border-slate-200 bg-white p-2 shadow-xl">
-              <a href="{{ url_for('instructor.login') }}" class="block rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-700">Instructor login</a>
-              <a href="{{ url_for('instructor.register') }}" class="block rounded-lg px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50">Create instructor account</a>
-            </div>
-          </details>
-          <a href="{{ url_for('public.contact') }}" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:text-blue-600 hover:bg-slate-50 transition">Contact Us</a>
-        </nav>
+      <div class="flex items-center justify-between h-16 lg:h-20 lg:grid lg:grid-cols-3">
 
-        <!-- Header Actions (Desktop) -->
-        <div class="hidden lg:flex items-center gap-3">
-          {% if current_user.is_authenticated and current_user.__class__.__name__ == 'Instructor' %}
-          <a href="{{ url_for('instructor.dashboard') }}" class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:text-blue-600 font-semibold text-sm transition-all">Instructor dashboard</a>
-          <a href="{{ url_for('instructor.logout') }}" class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition-all">Logout</a>
-          {% elif current_user.is_authenticated and current_user.__class__.__name__ == 'Student' %}
-          <a href="{{ url_for('student.dashboard') }}" class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:text-blue-600 hover:bg-blue-50 font-semibold text-sm transition-all">Dashboard</a>
-          <a href="{{ url_for('student.student_logout') }}" class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition-all shadow-md shadow-blue-600/20">Logout</a>
-          {% elif current_user.is_authenticated and current_user.__class__.__name__ == 'AdminUser' %}
-          <a href="{{ url_for('admin.dashboard') }}" class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 font-semibold text-sm transition-all">Admin</a>
-          <a href="{{ url_for('admin.admin_logout') }}" class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-blue-600 text-white font-semibold text-sm transition-all">Logout</a>
-          {% else %}
-          <a href="{{ url_for('student.student_login') }}" class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:text-blue-600 hover:bg-blue-50 font-semibold text-sm transition-all">
-            Login
+        <!-- Left: contact (desktop only) -->
+        <div class="hidden lg:flex flex-col gap-1 text-xs text-slate-500">
+          <a href="mailto:{{ company_settings.contact_email or 'info@axiomgateway.com' }}" class="hover:text-brand-600 transition flex items-center gap-2">
+            <i class="fa-solid fa-envelope text-brand-500 w-3.5"></i>{{ company_settings.contact_email or 'info@axiomgateway.com' }}
           </a>
-          <a href="{{ url_for('student.student_register') }}" class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition-all shadow-md shadow-blue-600/20 hover:-translate-y-0.5">
-            Register
+          <a href="tel:{{ company_settings.telephone or '+2348000000000' }}" class="hover:text-brand-600 transition flex items-center gap-2">
+            <i class="fa-solid fa-phone text-emerald-500 w-3.5"></i>{{ company_settings.telephone or '+234 (0) 800 AXIOM' }}
           </a>
-          {% endif %}
-          <!-- <a href="{{ url_for('public.contact') }}" class="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm transition-all shadow-md shadow-slate-900/20 hover:-translate-y-0.5">
-            Request a Consultation
-          </a> -->
         </div>
 
-        <!-- Mobile Menu Toggle Button -->
+        <!-- Center: logo -->
+        <a class="flex items-center gap-3 shrink-0 group focus:outline-hidden lg:justify-self-center" href="{{ url_for('public.home') }}">
+          <div class="relative flex items-center justify-center">
+            <img src="{{ company_settings.logo_url or url_for('static', filename='images/logo.png') }}"
+                 alt="{{ company_settings.company_name or 'Axiom Gateway Consult' }}"
+                 class="h-10 lg:h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="hidden items-center gap-2.5">
+              <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-navy-900 to-brand-600 flex items-center justify-center text-white shadow-md shadow-brand-600/30">
+                <i class="fa-solid fa-shapes text-xl"></i>
+              </div>
+              <div class="flex flex-col">
+                <span class="font-heading font-extrabold text-xl tracking-tight text-navy-900 leading-none">AXIOM</span>
+                <span class="text-[10px] font-bold uppercase tracking-widest text-gold-600 leading-tight">Gateway Consult</span>
+              </div>
+            </div>
+          </div>
+        </a>
+
+        <!-- Right: auth (desktop) / toggle (mobile) -->
+        <div class="hidden lg:flex items-center justify-end gap-3">
+          {{ auth_buttons() }}
+        </div>
         <button id="mobile-toggle" type="button" class="lg:hidden p-2.5 rounded-xl text-slate-700 hover:bg-slate-100 focus:outline-hidden transition" aria-expanded="false" aria-controls="main-nav" aria-label="Toggle Navigation">
-          <span class="sr-only">Open main menu</span>
           <i id="menu-icon" class="fa-solid fa-bars text-xl"></i>
         </button>
-
       </div>
+
+      <!-- Nav row (desktop) -->
+      <nav class="hidden lg:flex items-center justify-center gap-1 border-t border-slate-100 h-12" aria-label="Main navigation">
+        {% for label, href in nav_items[:-1] %}
+          <a href="{{ href }}" class="px-3.5 py-1.5 rounded-lg text-sm font-semibold text-slate-700 hover:text-brand-600 hover:bg-slate-100/80 transition">{{ label }}</a>
+        {% endfor %}
+
+        <a href="{{ url_for('public.academy_home') }}" {% if request.path.startswith('/academy') %}aria-current="page"{% endif %}
+           class="px-3.5 py-1.5 rounded-lg text-sm font-bold transition flex items-center gap-1.5 {% if request.path.startswith('/academy') %}bg-brand-50 text-brand-700 ring-1 ring-brand-200{% else %}text-slate-700 hover:text-brand-600 hover:bg-slate-100/80{% endif %}">
+          <i class="fa-solid fa-graduation-cap text-gold-600"></i> Academy
+        </a>
+
+        <div class="relative group">
+          <button class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm font-semibold text-slate-700 hover:text-brand-600 hover:bg-slate-100/80 transition focus:outline-hidden">
+            <span>Instructors</span>
+            <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 group-hover:rotate-180 transition-transform duration-200"></i>
+          </button>
+          <div class="absolute left-1/2 -translate-x-1/2 top-full pt-2 w-56 opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-200 z-50">
+            <div class="rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl shadow-slate-900/10 ring-1 ring-slate-900/5">
+              <a href="{{ url_for('instructor.login') }}" class="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-brand-600 transition">
+                <i class="fa-solid fa-right-to-bracket text-brand-500"></i> Instructor Login
+              </a>
+              <a href="{{ url_for('instructor.register') }}" class="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-semibold text-brand-600 hover:bg-brand-50 transition">
+                <i class="fa-solid fa-user-plus text-brand-600"></i> Join as Instructor
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <a href="{{ nav_items[-1][1] }}" class="px-3.5 py-1.5 rounded-lg text-sm font-semibold text-slate-700 hover:text-brand-600 hover:bg-slate-100/80 transition">{{ nav_items[-1][0] }}</a>
+       
+      </nav>
     </div>
 
-    <!-- Mobile Navigation Drawer -->
-    <div id="main-nav" class="hidden lg:hidden border-b border-slate-200 bg-white px-4 pt-2 pb-6 space-y-2 shadow-lg transition-all">
-      <!-- <a href="{{ url_for('public.home') }}" class="block px-3 py-2.5 rounded-lg text-base font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition">Home</a> -->
-      <a href="{{ url_for('public.about') }}" class="block px-3 py-2.5 rounded-lg text-base font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition">About Us</a>
-      <a href="{{ url_for('public.services') }}" class="block px-3 py-2.5 rounded-lg text-base font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition">Our Services</a>
-      <a href="{{ url_for('public.who_we_serve') }}" class="block px-3 py-2.5 rounded-lg text-base font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition">Who We Serve</a>
-      <a href="{{ url_for('public.projects') }}" class="block px-3 py-2.5 rounded-lg text-base font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition">Projects</a>
-      <!-- <a href="{{ url_for('public.insights') }}" class="block px-3 py-2.5 rounded-lg text-base font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition">Insights</a> -->
-      <a href="{{ url_for('public.academy_home') }}" {% if request.path.startswith('/academy') %}aria-current="page"{% endif %} class="block px-3 py-2.5 rounded-lg text-base font-semibold {% if request.path.startswith('/academy') %}bg-blue-50 text-blue-700{% else %}text-slate-700 hover:bg-blue-50 hover:text-blue-600{% endif %} transition">Academy</a>
-      <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
-        <p class="px-2 pb-1 text-xs font-bold uppercase tracking-wider text-slate-500">For instructors</p>
-        <a href="{{ url_for('instructor.login') }}" class="block px-2 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-white hover:text-blue-600 transition">Instructor login</a>
-        <a href="{{ url_for('instructor.register') }}" class="block px-2 py-2 rounded-lg text-sm font-semibold text-blue-700 hover:bg-white transition">Create instructor account</a>
+    <!-- Mobile drawer -->
+    <div id="main-nav" class="hidden lg:hidden border-t border-slate-200 bg-white px-4 pt-3 pb-6 space-y-1 shadow-2xl max-h-[80vh] overflow-y-auto">
+      {% for label, href in nav_items %}
+        <a href="{{ href }}" class="block px-4 py-2.5 rounded-xl text-base font-semibold text-slate-700 hover:bg-brand-50 hover:text-brand-600 transition">{{ label }}</a>
+      {% endfor %}
+      <a href="{{ url_for('public.academy_home') }}" {% if request.path.startswith('/academy') %}aria-current="page"{% endif %} class="block px-4 py-2.5 rounded-xl text-base font-bold {% if request.path.startswith('/academy') %}bg-brand-50 text-brand-700{% else %}text-slate-700 hover:bg-brand-50 hover:text-brand-600{% endif %} transition">
+        <i class="fa-solid fa-graduation-cap text-gold-500 mr-2"></i> Academy
+      </a>
+      <a href="{{ url_for('public.verify_certificate') }}" class="block px-4 py-2.5 rounded-xl text-base font-semibold text-slate-700 hover:bg-brand-50 hover:text-brand-600 transition">
+        <i class="fa-solid fa-shield-halved text-brand-500 mr-2"></i> Verify Certificate
+      </a>
+
+      <div class="grid grid-cols-2 gap-2 pt-2">
+        <a href="{{ url_for('instructor.login') }}" class="text-center px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-700 hover:text-brand-600 transition">Instructor Login</a>
+        <a href="{{ url_for('instructor.register') }}" class="text-center px-3 py-2.5 rounded-xl border border-brand-200 bg-brand-50 text-sm font-bold text-brand-600 transition">Apply as Instructor</a>
       </div>
-      <a href="{{ url_for('public.contact') }}" class="block px-3 py-2.5 rounded-lg text-base font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition">Contact Us</a>
-      <div class="pt-2 space-y-2">
-        {% if current_user.is_authenticated and current_user.__class__.__name__ == 'Instructor' %}
-        <a href="{{ url_for('instructor.dashboard') }}" class="w-full inline-flex items-center justify-center px-5 py-3 rounded-xl border border-slate-200 bg-white text-slate-700 font-semibold text-sm transition">Instructor dashboard</a>
-        <a href="{{ url_for('instructor.logout') }}" class="w-full inline-flex items-center justify-center px-5 py-3 rounded-xl bg-blue-600 text-white font-semibold text-sm transition shadow-md">Logout</a>
-        {% elif current_user.is_authenticated and current_user.__class__.__name__ == 'Student' %}
-        <a href="{{ url_for('student.dashboard') }}" class="w-full inline-flex items-center justify-center px-5 py-3 rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:text-blue-600 font-semibold text-sm transition">Dashboard</a>
-        <a href="{{ url_for('student.student_logout') }}" class="w-full inline-flex items-center justify-center px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition shadow-md">Logout</a>
-        {% elif current_user.is_authenticated and current_user.__class__.__name__ == 'AdminUser' %}
-        <a href="{{ url_for('admin.dashboard') }}" class="w-full inline-flex items-center justify-center px-5 py-3 rounded-xl border border-slate-200 bg-white text-slate-700 font-semibold text-sm transition">Admin dashboard</a>
-        <a href="{{ url_for('admin.admin_logout') }}" class="w-full inline-flex items-center justify-center px-5 py-3 rounded-xl bg-blue-600 text-white font-semibold text-sm transition shadow-md">Logout</a>
-        {% else %}
-        <a href="{{ url_for('student.student_login') }}" class="w-full inline-flex items-center justify-center px-5 py-3 rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:text-blue-600 font-semibold text-sm transition">
-          Login
-        </a>
-        <a href="{{ url_for('student.student_register') }}" class="w-full inline-flex items-center justify-center px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition shadow-md">
-          Register
-        </a>
-        {% endif %}
-        <!-- <a href="{{ url_for('public.contact') }}" class="w-full inline-flex items-center justify-center px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition shadow-md">
-          Request a Consultation
-        </a> -->
+
+      <div class="pt-3 mt-3 space-y-2 border-t border-slate-100">
+        {{ auth_buttons(true) }}
       </div>
     </div>
   </header>
 
-  <!-- Flash Messages / Notifications -->
+  <!-- Flash Notifications -->
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
         <div class="space-y-3">
           {% for category, message in messages %}
             {% set cat = category or 'success' %}
-            <div class="p-4 rounded-xl border flex items-center justify-between shadow-sm 
-              {% if cat == 'error' or cat == 'danger' %} bg-rose-50 border-rose-200 text-rose-800
-              {% elif cat == 'warning' %} bg-amber-50 border-amber-200 text-amber-800
-              {% elif cat == 'info' %} bg-sky-50 border-sky-200 text-sky-800
-              {% else %} bg-emerald-50 border-emerald-200 text-emerald-800 {% endif %}">
+            <div class="p-4 rounded-2xl border flex items-center justify-between shadow-sm animate-fade-in
+              {% if cat in ['error', 'danger'] %} bg-rose-50/90 border-rose-200 text-rose-900
+              {% elif cat == 'warning' %} bg-amber-50/90 border-amber-200 text-amber-900
+              {% elif cat == 'info' %} bg-sky-50/90 border-sky-200 text-sky-900
+              {% else %} bg-emerald-50/90 border-emerald-200 text-emerald-900 {% endif %}">
               <div class="flex items-center gap-3">
-                <i class="fa-solid 
-                  {% if cat == 'error' or cat == 'danger' %} fa-circle-exclamation
-                  {% elif cat == 'warning' %} fa-triangle-exclamation
-                  {% elif cat == 'info' %} fa-circle-info
-                  {% else %} fa-circle-check {% endif %} text-lg"></i>
-                <span class="text-sm font-medium">{{ message }}</span>
+                <i class="fa-solid
+                  {% if cat in ['error', 'danger'] %} fa-circle-exclamation text-rose-500
+                  {% elif cat == 'warning' %} fa-triangle-exclamation text-amber-500
+                  {% elif cat == 'info' %} fa-circle-info text-sky-500
+                  {% else %} fa-circle-check text-emerald-500 {% endif %} text-lg"></i>
+                <span class="text-sm font-semibold">{{ message }}</span>
               </div>
+              <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600 p-1" aria-label="Dismiss">
+                <i class="fa-solid fa-xmark text-sm"></i>
+              </button>
             </div>
           {% endfor %}
         </div>
@@ -163,106 +213,210 @@
     {% endif %}
   {% endwith %}
 
-  <!-- Main Content Block -->
+  <!-- Main Content -->
   <main class="grow">
-    {% block content %}{% endblock %}
+    {% block content %}
+      <!-- DEFAULT HERO: centered, full-width, with stats and service pillars below -->
+      <section class="relative overflow-hidden bg-navy-950 text-white pt-20 lg:pt-28 pb-40 bg-grid-pattern">
+        <div class="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-brand-600/20 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute bottom-10 right-10 w-[400px] h-[300px] bg-gold-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center space-y-6">
+          <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/15 backdrop-blur-md text-gold-400 text-xs font-bold uppercase tracking-wider">
+            <i class="fa-solid fa-lightbulb"></i>
+            Technology • Consulting • Capacity Building
+          </div>
+
+          <h1 class="font-heading text-4xl sm:text-5xl lg:text-7xl font-extrabold tracking-tight text-white leading-[1.05]">
+            Transforming Vision into <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-300 via-brand-200 to-gold-400">Sustainable Growth</span>
+          </h1>
+
+          <p class="text-slate-300 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
+            Axiom Gateway Consult delivers enterprise consulting, advanced technology integration, and world-class capacity development to help public and private organizations excel.
+          </p>
+
+          <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
+            <a href="{{ url_for('public.contact') }}" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-base transition-all shadow-lg shadow-brand-600/30 hover:-translate-y-0.5">
+              Request Consultation <i class="fa-solid fa-arrow-right text-xs"></i>
+            </a>
+            <a href="{{ url_for('public.services') }}" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl border border-slate-700 bg-white/5 hover:bg-white/10 text-white font-semibold text-base backdrop-blur-md transition-all">
+              Explore Services
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- Stats bar overlapping the hero -->
+      <section class="relative z-20 -mt-24 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-5xl mx-auto grid grid-cols-3 divide-x divide-slate-200 rounded-3xl bg-white border border-slate-200 shadow-glass py-6 sm:py-8 text-center">
+          <div>
+            <p class="font-heading text-2xl lg:text-4xl font-extrabold text-navy-900">99%</p>
+            <p class="text-xs sm:text-sm text-slate-500 mt-1">Client Satisfaction</p>
+          </div>
+          <div>
+            <p class="font-heading text-2xl lg:text-4xl font-extrabold text-navy-900">150+</p>
+            <p class="text-xs sm:text-sm text-slate-500 mt-1">Projects Delivered</p>
+          </div>
+          <div>
+            <p class="font-heading text-2xl lg:text-4xl font-extrabold text-navy-900">10k+</p>
+            <p class="text-xs sm:text-sm text-slate-500 mt-1">Professionals Trained</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Service pillars -->
+      <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
+        <div class="grid md:grid-cols-3 gap-6">
+          <a href="{{ url_for('public.services') }}" class="group rounded-3xl border border-slate-200 bg-white p-7 hover:border-brand-300 hover:shadow-glow transition">
+            <div class="w-12 h-12 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center mb-5"><i class="fa-solid fa-microchip text-lg"></i></div>
+            <h3 class="font-heading text-lg font-bold text-navy-900">Digital Transformation</h3>
+            <p class="text-sm text-slate-500 mt-2 leading-relaxed">Technology integration that fits how your organization actually works.</p>
+            <span class="inline-flex items-center gap-1.5 mt-5 text-sm font-bold text-brand-600">Learn more <i class="fa-solid fa-chevron-right text-[10px] group-hover:translate-x-1 transition-transform"></i></span>
+          </a>
+          <a href="{{ url_for('public.academy_home') }}" class="group rounded-3xl border border-slate-200 bg-white p-7 hover:border-brand-300 hover:shadow-glow transition">
+            <div class="w-12 h-12 rounded-xl bg-amber-50 text-gold-600 flex items-center justify-center mb-5"><i class="fa-solid fa-graduation-cap text-lg"></i></div>
+            <h3 class="font-heading text-lg font-bold text-navy-900">Axiom Learning Academy</h3>
+            <p class="text-sm text-slate-500 mt-2 leading-relaxed">Corporate programs and certified courses for teams and individuals.</p>
+            <span class="inline-flex items-center gap-1.5 mt-5 text-sm font-bold text-brand-600">Explore programs <i class="fa-solid fa-chevron-right text-[10px] group-hover:translate-x-1 transition-transform"></i></span>
+          </a>
+          <a href="{{ url_for('public.services') }}" class="group rounded-3xl border border-slate-200 bg-white p-7 hover:border-brand-300 hover:shadow-glow transition">
+            <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-5"><i class="fa-solid fa-briefcase text-lg"></i></div>
+            <h3 class="font-heading text-lg font-bold text-navy-900">Management Advisory</h3>
+            <p class="text-sm text-slate-500 mt-2 leading-relaxed">Strategic optimization for public and private organizations.</p>
+            <span class="inline-flex items-center gap-1.5 mt-5 text-sm font-bold text-brand-600">Learn more <i class="fa-solid fa-chevron-right text-[10px] group-hover:translate-x-1 transition-transform"></i></span>
+          </a>
+        </div>
+      </section>
+    {% endblock %}
   </main>
 
-  <!-- Footer -->
-  <footer class="bg-slate-900 text-slate-400 border-t border-slate-800 pt-16 pb-12">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b border-slate-800">
-        
-        <!-- Company Info Column -->
-        <div class="lg:col-span-2 space-y-4">
-          <img src="{{ company_settings.logo_url or url_for('static', filename='images/logo.svg') }}" alt="{{ company_settings.company_name or 'Axiom Gateway Consult' }} logo" class="h-9 w-auto object-contain brightness-0 invert">
-          <p class="text-slate-300 font-medium text-sm">{{ company_settings.tagline or 'Technology solutions, professional consulting and capacity development services.' }}</p>
-          <p class="text-slate-400 text-sm leading-relaxed">{{ company_settings.footer_text or 'Axiom Gateway Consult helps organizations, institutions and individuals turn insight into sustainable growth.' }}</p>
-        </div>
+  <!-- FOOTER: CTA band, then link columns, then legal bar -->
+  <footer class="bg-navy-950 text-slate-400 relative overflow-hidden">
+    <div class="absolute bottom-0 right-0 w-96 h-96 bg-brand-600/5 rounded-full blur-3xl pointer-events-none"></div>
 
-        <!-- Services Links -->
+    <!-- CTA band -->
+    <div class="relative z-10 border-b border-slate-800/80">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div class="flex items-center gap-4 text-center md:text-left flex-col md:flex-row">
+          <img src="{{ company_settings.logo_url or url_for('static', filename='images/logo.png') }}"
+               alt="{{ company_settings.company_name or 'Axiom Gateway Consult' }}"
+               class="h-10 w-auto object-contain brightness-0 invert"
+               onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+          <div class="hidden items-center gap-2">
+            <div class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white"><i class="fa-solid fa-shapes text-sm"></i></div>
+            <span class="font-heading font-extrabold text-xl tracking-tight text-white">AXIOM</span>
+          </div>
+          <p class="text-slate-300 font-semibold text-sm max-w-md">
+            {{ company_settings.tagline or 'Technology solutions, professional consulting and capacity development services.' }}
+          </p>
+        </div>
+        <a href="{{ url_for('public.contact') }}" class="shrink-0 inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-sm transition shadow-lg shadow-brand-600/30">
+          Request Consultation <i class="fa-solid fa-arrow-right text-xs"></i>
+        </a>
+      </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-10 relative z-10">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-10 pb-10">
+
         <div class="space-y-4">
-          <h3 class="text-white text-sm font-bold uppercase tracking-wider">Services</h3>
+          <h3 class="text-xs font-bold uppercase tracking-widest font-heading text-gold-500">Solutions</h3>
           <ul class="space-y-2.5 text-sm">
-            {% for service in services %}
-              <li><a href="{{ url_for('public.service_detail', slug=service.slug) }}" class="hover:text-white transition">{{ service.name }}</a></li>
-            {% endfor %}
+            {% if services %}
+              {% for service in services %}
+                <li><a href="{{ url_for('public.service_detail', slug=service.slug) }}" class="hover:text-white transition">{{ service.name }}</a></li>
+              {% endfor %}
+            {% else %}
+              <li><a href="{{ url_for('public.services') }}" class="hover:text-white transition">Tech Advisory</a></li>
+              <li><a href="{{ url_for('public.services') }}" class="hover:text-white transition">Corporate Training</a></li>
+              <li><a href="{{ url_for('public.services') }}" class="hover:text-white transition">System Integration</a></li>
+            {% endif %}
           </ul>
         </div>
 
-        <!-- Company Links -->
         <div class="space-y-4">
-          <h3 class="text-white text-sm font-bold uppercase tracking-wider">Company</h3>
+          <h3 class="text-xs font-bold uppercase tracking-widest font-heading text-gold-500">Company</h3>
           <ul class="space-y-2.5 text-sm">
             <li><a href="{{ url_for('public.about') }}" class="hover:text-white transition">About Us</a></li>
-            <li><a href="{{ url_for('public.projects') }}" class="hover:text-white transition">Projects</a></li>
-            <li><a href="{{ url_for('public.insights') }}" class="hover:text-white transition">Insights</a></li>
-            <li><a href="{{ url_for('public.academy_home') }}" class="hover:text-white transition">Axiom Academy</a></li>
-            <li><a href="{{ url_for('public.academy_courses') }}" class="hover:text-white transition">Course catalogue</a></li>
-            <li><a href="{{ url_for('public.academy_products') }}" class="hover:text-white transition">Digital resources</a></li>
-            <li><a href="{{ url_for('public.verify_certificate') }}" class="hover:text-white transition">Verify certificate</a></li>
+            <li><a href="{{ url_for('public.projects') }}" class="hover:text-white transition">Projects Portfolio</a></li>
+            <li><a href="{{ url_for('public.insights') }}" class="hover:text-white transition">Insights & Articles</a></li>
             <li><a href="{{ url_for('public.contact') }}" class="hover:text-white transition">Contact</a></li>
           </ul>
         </div>
 
-        <!-- Contact Info -->
         <div class="space-y-4">
-          <h3 class="text-white text-sm font-bold uppercase tracking-wider">Contact</h3>
+          <h3 class="text-xs font-bold uppercase tracking-widest font-heading text-gold-500">Academy & Portals</h3>
           <ul class="space-y-2.5 text-sm">
-            <li>
-              <a href="mailto:{{ company_settings.contact_email }}" class="hover:text-white transition flex items-center gap-2">
-                <i class="fa-solid fa-envelope text-blue-400 text-xs"></i> {{ company_settings.contact_email }}
-              </a>
-            </li>
-            <li>
-              <a href="tel:{{ company_settings.telephone }}" class="hover:text-white transition flex items-center gap-2">
-                <i class="fa-solid fa-phone text-emerald-400 text-xs"></i> {{ company_settings.telephone }}
-              </a>
-            </li>
-            <li class="flex items-start gap-2">
-              <i class="fa-solid fa-location-dot text-indigo-400 text-xs mt-1"></i> 
-              <span>{{ company_settings.office_address }}</span>
-            </li>
-            {% if company_settings.instagram_url %}
-              <li>
-                <a href="{{ company_settings.instagram_url }}" target="_blank" rel="noreferrer" class="hover:text-white transition flex items-center gap-2">
-                  <i class="fa-brands fa-instagram text-rose-400"></i> Instagram
-                </a>
-              </li>
-            {% endif %}
-            {% if company_settings.whatsapp_url %}
-              <li>
-                <a href="{{ company_settings.whatsapp_url }}" target="_blank" rel="noreferrer" class="hover:text-white transition flex items-center gap-2">
-                  <i class="fa-brands fa-whatsapp text-emerald-400"></i> WhatsApp
-                </a>
-              </li>
-            {% endif %}
+            <li><a href="{{ url_for('public.academy_home') }}" class="hover:text-white transition flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-gold-500"></span> Axiom Academy</a></li>
+            <li><a href="{{ url_for('public.verify_certificate') }}" class="hover:text-white transition">Verify Certificate</a></li>
+            <li><a href="{{ url_for('student.student_login') }}" class="hover:text-white transition">Student Portal</a></li>
+            <li><a href="{{ url_for('instructor.login') }}" class="hover:text-white transition">Instructor Portal</a></li>
           </ul>
         </div>
 
+        <div class="col-span-2 lg:col-span-1 space-y-4">
+          <h3 class="text-xs font-bold uppercase tracking-widest font-heading text-gold-500">Contact</h3>
+          <ul class="space-y-3 text-sm">
+            <li>
+              <a href="mailto:{{ company_settings.contact_email or 'info@axiomgateway.com' }}" class="hover:text-white transition flex items-start gap-2.5">
+                <i class="fa-solid fa-envelope text-brand-400 mt-1"></i>
+                <span class="break-all">{{ company_settings.contact_email or 'info@axiomgateway.com' }}</span>
+              </a>
+            </li>
+            <li>
+              <a href="tel:{{ company_settings.telephone or '+2348000000000' }}" class="hover:text-white transition flex items-start gap-2.5">
+                <i class="fa-solid fa-phone text-emerald-400 mt-1"></i>
+                <span>{{ company_settings.telephone or '+234 (0) 800 AXIOM' }}</span>
+              </a>
+            </li>
+            <li class="flex items-start gap-2.5">
+              <i class="fa-solid fa-location-dot text-gold-500 mt-1"></i>
+              <span class="text-slate-300 leading-snug">{{ company_settings.office_address or 'Head Office: Central Business District, Abuja, Nigeria' }}</span>
+            </li>
+          </ul>
+        </div>
       </div>
 
-      <!-- Footer Bottom Bar -->
-      <div class="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-        <div class="space-x-2">
-          <a href="{{ url_for('public.privacy') }}" class="hover:text-slate-300 transition">Privacy Policy</a>
-          <span>|</span>
-          <a href="{{ url_for('public.terms') }}" class="hover:text-slate-300 transition">Terms of Use</a>
+      <!-- Bottom bar: about text + socials + legal -->
+      <div class="pt-8 border-t border-slate-800/80 space-y-6">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-5">
+          <p class="text-slate-400 text-sm leading-relaxed max-w-xl">
+            {{ company_settings.footer_text or 'Axiom Gateway Consult helps organizations, institutions, and individuals turn strategic insight into sustainable growth.' }}
+          </p>
+          <div class="flex items-center gap-3">
+            {% if company_settings.instagram_url %}
+              <a href="{{ company_settings.instagram_url }}" target="_blank" rel="noreferrer" class="w-9 h-9 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 hover:text-white hover:bg-brand-600 hover:border-brand-600 transition" aria-label="Instagram"><i class="fa-brands fa-instagram text-sm"></i></a>
+            {% endif %}
+            {% if company_settings.whatsapp_url %}
+              <a href="{{ company_settings.whatsapp_url }}" target="_blank" rel="noreferrer" class="w-9 h-9 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 hover:text-white hover:bg-emerald-600 hover:border-emerald-600 transition" aria-label="WhatsApp"><i class="fa-brands fa-whatsapp text-sm"></i></a>
+            {% endif %}
+            {% if company_settings.youtube_url %}
+              <a href="{{ company_settings.youtube_url }}" target="_blank" rel="noreferrer" class="w-9 h-9 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 hover:text-white hover:bg-rose-600 hover:border-rose-600 transition" aria-label="YouTube"><i class="fa-brands fa-youtube text-sm"></i></a>
+            {% endif %}
+            <a href="#" class="w-9 h-9 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 hover:text-white hover:bg-brand-600 hover:border-brand-600 transition" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in text-sm"></i></a>
+          </div>
         </div>
-        <div>
-          © <span id="year"></span> {{ company_settings.company_name or 'Axiom Gateway Consult' }}. All rights reserved.
+
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+          <div class="flex items-center space-x-4">
+            <a href="{{ url_for('public.privacy') }}" class="hover:text-slate-200 transition">Privacy Policy</a>
+            <span>•</span>
+            <a href="{{ url_for('public.terms') }}" class="hover:text-slate-200 transition">Terms of Service</a>
+            <span>•</span>
+            <a href="{{ url_for('public.contact') }}" class="hover:text-slate-200 transition">Support</a>
+          </div>
+          <div class="text-center sm:text-right">
+            © <span id="year"></span> {{ company_settings.company_name or 'Axiom Gateway Consult' }}. All rights reserved.
+          </div>
         </div>
       </div>
     </div>
   </footer>
 
-  <!-- Scripts -->
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   <script>
-    // Set dynamic current year in footer
     document.getElementById('year').textContent = new Date().getFullYear();
 
-    // Mobile menu toggle script snippet
     const mobileToggle = document.getElementById('mobile-toggle');
     const mainNav = document.getElementById('main-nav');
     const menuIcon = document.getElementById('menu-icon');

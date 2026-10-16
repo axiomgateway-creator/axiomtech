@@ -1,12 +1,12 @@
 :root {
-  --primary: #0f172a;
-  --primary-2: #1e293b;
-  --accent: #0ea5e9;
-  --accent-soft: #e0f2fe;
+  --primary: #09294b;
+  --primary-2: #173b5d;
+  --accent: #c9a227;
+  --accent-soft: #fbf8ed;
   --surface: #f8fafc;
-  --surface-2: #eef6ff;
+  --surface-2: #f5f7fa;
   --muted: #475569;
-  --border: #dbe4f0;
+  --border: #d7dee8;
   --success: #166534;
   --error: #b91c1c;
   --warning: #92400e;
@@ -16,7 +16,7 @@
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body {
-  font-family: "Segoe UI", Tahoma, sans-serif;
+  font-family: "DM Sans", sans-serif;
   background: #fff;
   color: var(--primary);
   margin: 0;
@@ -38,7 +38,7 @@ img { max-width: 100%; display: block; }
   cursor: pointer;
 }
 .btn-primary { background: var(--primary); color: white; }
-.btn-primary:hover { background: #111827; color: white; }
+.btn-primary:hover { background: #173b5d; color: white; }
 .btn-secondary { background: var(--accent-soft); color: var(--primary); }
 .btn-outline { border-color: var(--primary); color: var(--primary); background: transparent; }
 .site-header {
@@ -128,6 +128,7 @@ textarea { min-height: 120px; }
 .admin-nav { display: flex; flex-direction: column; gap: 0.6rem; }
 .admin-nav a { color: #e2e8f0; padding: 0.8rem 0.9rem; border-radius: 10px; }
 .admin-nav a:hover { background: rgba(255,255,255,0.08); color: white; }
+.admin-nav a[aria-current="page"] { background: rgba(201, 162, 39, 0.18); color: #f2d477; border-left: 3px solid #c9a227; }
 .admin-main { padding: 2rem; }
 .stats-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1rem; margin: 1.5rem 0; }
 .small-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }

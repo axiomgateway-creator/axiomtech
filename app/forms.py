@@ -157,6 +157,7 @@ class CompanySettingsForm(FlaskForm):
     office_address = TextAreaField("Office address", validators=[DataRequired()])
     instagram_url = StringField("Instagram URL", validators=[Optional()])
     whatsapp_url = StringField("WhatsApp URL", validators=[Optional()])
+    youtube_url = StringField("YouTube URL", validators=[Optional()])
     logo_url = StringField("Logo URL", validators=[Optional()])
     favicon_url = StringField("Favicon URL", validators=[Optional()])
     footer_text = TextAreaField("Footer text", validators=[Optional()])

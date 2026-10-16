@@ -3,556 +3,368 @@
 {% block title %}Axiom Gateway Consult | Technology, Consulting and Capacity Development{% endblock %}
 
 {% block content %}
-<!-- Hero Section -->
-<section class="relative bg-slate-950 text-white overflow-hidden py-24 lg:py-32 border-b border-slate-800/80">
-  <!-- Dynamic Background Effects & Image Layers -->
-  <div class="absolute inset-0 z-0 opacity-20 bg-cover bg-center" style="background-image: url('{{ url_for('static', filename='images/image5.png') }}');"></div>
-  <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/30 via-slate-950 to-slate-950 z-0"></div>
-  <div class="absolute -top-40 -right-40 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl pointer-events-none"></div>
-  <div class="absolute top-1/2 -left-40 w-96 h-96 bg-indigo-600/15 rounded-full blur-3xl pointer-events-none"></div>
+{# ---------- Shared lookups ---------- #}
+{% set svc_img = {
+  'digital-solutions-it': 'image4.png',
+  'human-resource-organizational-development': 'image6.png',
+  'business-management-consulting': 'image7.png',
+  'digital-marketing-creative': 'image5.png',
+  'data-analytics-business-intelligence': 'image.png'
+} %}
+{% set svc_tags = {
+  'digital-solutions-it': ['Web design & development', 'Business portals', 'Cloud hosting support'],
+  'human-resource-organizational-development': ['Training needs assessment', 'Workforce development', 'Team building'],
+  'business-management-consulting': ['Business planning', 'Project advisory', 'Process improvement'],
+  'digital-marketing-creative': ['Brand identity', 'SEO support', 'Creative content']
+} %}
 
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
-      
-      <!-- Hero Left Column -->
-      <div class="lg:col-span-7 space-y-8 text-center lg:text-left">
-        <!-- Status Pill -->
-        <div class="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-slate-900/90 border border-blue-500/30 text-blue-400 text-xs sm:text-sm font-semibold tracking-wide uppercase shadow-lg shadow-blue-950/50 backdrop-blur-md">
-          <span class="relative flex h-2.5 w-2.5">
-            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-500"></span>
-          </span>
-          Technology • Consulting • Capacity Development
-        </div>
+<style>
+  .tw-cursor::after { content: ''; display: inline-block; width: 2px; height: 1em; margin-left: 3px; vertical-align: -0.12em; background: currentColor; animation: tw-blink 1s steps(1) infinite; }
+  @keyframes tw-blink { 50% { opacity: 0; } }
+  @keyframes orbit-spin { to { transform: rotate(360deg); } }
+  .orbit-ring { animation: orbit-spin 60s linear infinite; transform-origin: center; }
+  .orbit-ring-rev { animation: orbit-spin 90s linear infinite reverse; transform-origin: center; }
+  .snap-row { scroll-snap-type: x mandatory; scrollbar-width: none; }
+  .snap-row::-webkit-scrollbar { display: none; }
+  .snap-row > * { scroll-snap-align: start; }
+  @media (prefers-reduced-motion: reduce) { .orbit-ring, .orbit-ring-rev, .tw-cursor::after { animation: none; } }
+</style>
+
+<!-- ============ HERO SECTION ============ -->
+<!-- ============ HERO: EXECUTIVE CONSULTING VIBE ============ -->
+<section class="relative bg-[#09294B] text-white overflow-hidden border-b border-[#0f3d6e]">
+  <!-- Subtle Editorial Ambient Background & Gradient Accents -->
+  <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-[#0d3b6a] via-[#09294B] to-[#04162a] opacity-90"></div>
+  <div class="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-[#C9A227]/10 via-transparent to-transparent pointer-events-none"></div>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 py-16 lg:py-24">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+
+      <!-- Left Column: Executive Copy, Core Value Proposition & CTAs -->
+      <div class="lg:col-span-6 space-y-8 text-center lg:text-left">
         
-        <!-- Main Headline -->
-        <h1 class="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight text-white leading-[1.1]">
-          Empowering People. <br />
-          <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-sky-400">Transforming Businesses.</span>
+        <!-- Corporate Tagline Badge -->
+        <div class="inline-flex items-center gap-2.5 text-xs sm:text-sm font-semibold tracking-wide text-slate-200 bg-[#061c33]/80 border border-[#C9A227]/30 px-4 py-2 rounded-full shadow-lg backdrop-blur-md">
+          <span class="w-2 h-2 rounded-full bg-[#C9A227]"></span>
+          <span>{{ company_settings.tagline or 'Connecting People, Technology and Possibilities.' }}</span>
+        </div>
+
+        <!-- Strategic Headline -->
+        <h1 class="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.15] text-white">
+          Connecting <span class="text-[#C9A227]">People</span>. <br class="hidden sm:block">
+          <span class="text-[#C9A227]">Technology</span>. Possibilities.
         </h1>
-        
-        <!-- Subtitle -->
-        <p class="text-slate-300 text-lg sm:text-xl max-w-2xl mx-auto lg:mx-0 font-normal leading-relaxed">
-          Axiom Gateway Consult delivers high-impact technology solutions, advisory consulting, and workforce capacity development to accelerate digital maturity and sustainable growth.
+
+        <!-- Subtle Brand Accent Divider -->
+        <div class="w-20 h-1 bg-[#C9A227] mx-auto lg:mx-0 rounded-full"></div>
+
+        <!-- Concise Business Copy -->
+        <p class="text-slate-300 text-base sm:text-lg leading-relaxed max-w-xl mx-auto lg:mx-0 font-normal">
+          Axiom Gateway Consult delivers enterprise software engineering, digital capacity development, and strategic advisory to help forward-thinking organizations scale with confidence.
         </p>
 
-        <!-- CTAs -->
-        <div class="pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
-          <a href="{{ url_for('public.services') }}" class="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold transition-all shadow-xl shadow-blue-600/30 hover:shadow-blue-500/50 hover:-translate-y-0.5">
-            Explore Services
-            <i class="fa-solid fa-arrow-right text-sm"></i>
-          </a>
-          <a href="{{ url_for('public.contact') }}" class="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 font-semibold transition-all hover:border-slate-500">
-            Partner With Us
-          </a>
+        <!-- Service Pillar Indicators -->
+        <div class="grid grid-cols-3 gap-3 pt-2 text-left border-t border-slate-700/60 max-w-xl mx-auto lg:mx-0">
+          <div class="space-y-1">
+            <span class="block text-xs uppercase tracking-wider text-[#C9A227] font-semibold">Engineering</span>
+            <span class="block text-xs sm:text-sm font-medium text-slate-200">Software Solutions</span>
+          </div>
+          <div class="space-y-1 border-l border-slate-700/60 pl-3">
+            <span class="block text-xs uppercase tracking-wider text-[#C9A227] font-semibold">Academy</span>
+            <span class="block text-xs sm:text-sm font-medium text-slate-200">Digital Skills</span>
+          </div>
+          <div class="space-y-1 border-l border-slate-700/60 pl-3">
+            <span class="block text-xs uppercase tracking-wider text-[#C9A227] font-semibold">Advisory</span>
+            <span class="block text-xs sm:text-sm font-medium text-slate-200">Business Consulting</span>
+          </div>
         </div>
 
-        <!-- Inline Trust Badge / Metrics -->
-        <div class="pt-6 border-t border-slate-800/80 flex flex-wrap items-center justify-center lg:justify-start gap-8 text-left">
-          <div class="flex items-center gap-3">
-            <span class="text-3xl font-extrabold text-white">98%</span>
-            <span class="text-xs text-slate-400 font-medium leading-tight">Strategic Execution<br/>Success Rate</span>
-          </div>
-          <div class="h-8 w-px bg-slate-800 hidden sm:block"></div>
-          <div class="flex items-center gap-3">
-            <span class="text-3xl font-extrabold text-blue-400">Multi-Sector</span>
-            <span class="text-xs text-slate-400 font-medium leading-tight">Public & Private<br/>Solutions</span>
-          </div>
+        <!-- Actions / Primary CTAs -->
+        <div class="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
+          <a href="{{ url_for('public.services') }}" class="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 rounded-lg bg-[#C9A227] hover:bg-[#b08d20] text-[#09294B] font-bold transition-all duration-300 shadow-xl hover:shadow-[#C9A227]/20 hover:-translate-y-0.5">
+            Explore Services <i class="fa-solid fa-arrow-right text-xs"></i>
+          </a>
+          <a href="{{ url_for('public.academy_courses') }}" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg bg-transparent hover:bg-white/10 text-white border border-slate-400/40 hover:border-white font-semibold transition-all duration-300">
+            Browse Academy Courses
+          </a>
         </div>
       </div>
 
-      <!-- Hero Visual Column: Interactive Bento Grid -->
-      <div class="lg:col-span-5 relative">
-        <div class="grid grid-cols-2 gap-4">
+      <!-- Right Column: Editorial Visual Split-Screen -->
+      <div class="lg:col-span-6">
+        <div class="relative mx-auto max-w-lg lg:max-w-none">
           
-          <!-- Card 1: Main Brand & Image Accent -->
-          <div class="col-span-2 relative rounded-2xl overflow-hidden bg-slate-900/90 border border-slate-800 p-6 backdrop-blur-xl shadow-2xl group hover:border-blue-500/40 transition duration-300">
-            <div class="absolute inset-0 opacity-20 bg-cover bg-center group-hover:scale-105 transition-transform duration-700" style="background-image: url('{{ url_for('static', filename='images/image1.png') }}');"></div>
-            <div class="relative z-10 flex items-center justify-between mb-4">
-              <span class="px-2.5 py-1 text-[10px] font-bold tracking-wider text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full uppercase">Enterprise Ready</span>
-            </div>
-            <p class="relative z-10 text-slate-300 text-xs sm:text-sm font-medium leading-relaxed">
-              Grounding technology, analytics, and talent development into tailored operational frameworks.
-            </p>
-          </div>
+          <!-- Outer Decorative Accent Frame -->
+          <div class="absolute -inset-1.5 rounded-2xl bg-gradient-to-tr from-[#C9A227]/40 via-transparent to-[#C9A227]/20 opacity-70 blur-xs"></div>
 
-          <!-- Card 2: Technology Feature -->
-          <div class="rounded-2xl bg-slate-900/80 border border-slate-800/90 p-5 backdrop-blur-lg hover:border-blue-500/50 hover:bg-slate-900 transition duration-300 group">
-            <div class="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center font-bold mb-3 group-hover:bg-blue-600 group-hover:text-white transition">
-              <i class="fa-solid fa-laptop-code text-base"></i>
+          <div class="relative rounded-2xl overflow-hidden shadow-2xl bg-[#061c33] border border-slate-700/80">
+            <!-- Professional Consulting Imagery -->
+            <div class="relative aspect-[4/3] lg:aspect-[5/4] overflow-hidden">
+              <img src="{{ url_for('static', filename='images/image5.png') }}" alt="Axiom Gateway Consult Advisory Practice" class="w-full h-full object-cover object-center" loading="eager">
+              <div class="absolute inset-0 bg-gradient-to-t from-[#09294B] via-[#09294B]/20 to-transparent opacity-90"></div>
             </div>
-            <h4 class="text-white text-sm font-bold">Digital Systems</h4>
-            <p class="text-slate-400 text-xs mt-1">Custom software & Cloud enterprise platforms</p>
-          </div>
 
-          <!-- Card 3: Advisory Feature -->
-          <div class="rounded-2xl bg-slate-900/80 border border-slate-800/90 p-5 backdrop-blur-lg hover:border-emerald-500/50 hover:bg-slate-900 transition duration-300 group">
-            <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold mb-3 group-hover:bg-emerald-600 group-hover:text-white transition">
-              <i class="fa-solid fa-chart-pie text-base"></i>
-            </div>
-            <h4 class="text-white text-sm font-bold">Data & Insight</h4>
-            <p class="text-slate-400 text-xs mt-1">Analytics, performance & decision intelligence</p>
-          </div>
-
-          <!-- Card 4: Capacity & People Feature -->
-          <div class="col-span-2 rounded-2xl bg-slate-900/80 border border-slate-800/90 p-5 backdrop-blur-lg flex items-center justify-between hover:border-indigo-500/50 hover:bg-slate-900 transition duration-300 group">
-            <div class="flex items-center gap-4">
-              <div class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center font-bold group-hover:bg-indigo-600 group-hover:text-white transition shrink-0">
-                <i class="fa-solid fa-users text-base"></i>
+            <!-- Strategic Brief Overlay Overlay Box -->
+            <div class="p-6 sm:p-8 bg-[#061c33]/95 border-t border-[#C9A227]/30 space-y-4">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold uppercase tracking-widest text-[#C9A227]">Axiom Gateway Practice</span>
+                <span class="h-1.5 w-1.5 rounded-full bg-[#C9A227]"></span>
               </div>
-              <div>
-                <h4 class="text-white text-sm font-bold">Human Capability Development</h4>
-                <p class="text-slate-400 text-xs">Empowering institutional teams & workforce</p>
-              </div>
-            </div>
-            <i class="fa-solid fa-chevron-right text-xs text-slate-500 group-hover:text-indigo-400 group-hover:translate-x-1 transition"></i>
-          </div>
-
-        </div>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-<!-- Who We Are Section -->
-<section class="py-20 bg-white">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-      
-      <!-- Image / Graphic Representation -->
-      <div class="lg:col-span-5 relative order-2 lg:order-1">
-        <div class="relative rounded-2xl overflow-hidden shadow-2xl border border-slate-100 group">
-          <img src="{{ url_for('static', filename='images/image6.png') }}" alt="Axiom team and consulting work" class="h-80 w-full object-cover sm:h-[420px] group-hover:scale-105 transition-transform duration-500" loading="lazy" />
-          <div class="absolute inset-0 bg-gradient-to-t from-slate-900/70 via-slate-900/20 to-transparent"></div>
-          <div class="absolute bottom-4 left-4 right-4 bg-white/90 backdrop-blur-md p-4 rounded-xl shadow-lg border border-white/50">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold shrink-0">
-                <i class="fa-solid fa-bullseye"></i>
-              </div>
-              <div>
-                <p class="text-xs font-semibold text-slate-500 uppercase">Core Mission</p>
-                <p class="text-sm font-bold text-slate-800">Bridging Technology & Human Capability</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Text Content -->
-      <div class="lg:col-span-7 space-y-6 order-1 lg:order-2">
-        <div>
-          <span class="text-blue-600 font-semibold text-sm tracking-wider uppercase">About Our Firm</span>
-          <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-1">Who We Are</h2>
-        </div>
-        
-        <p class="text-slate-600 text-base sm:text-lg leading-relaxed">
-          Axiom Gateway Consult works at the intersection of technology, people development, business consulting, communication, and data analytics. We support organizations in making better decisions, improving operational performance, and creating sustainable value through practical implementation.
-        </p>
-
-        <div class="p-6 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-4">
-          <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
-            <i class="fa-solid fa-compass text-blue-600"></i> Our Approach
-          </h3>
-          <ul class="space-y-3">
-            <li class="flex items-start gap-3 text-slate-700 text-sm sm:text-base">
-              <i class="fa-solid fa-circle-check text-blue-600 mt-1 shrink-0"></i>
-              <span><strong>Technology solutions</strong> designed to fit real organizational needs.</span>
-            </li>
-            <li class="flex items-start gap-3 text-slate-700 text-sm sm:text-base">
-              <i class="fa-solid fa-circle-check text-blue-600 mt-1 shrink-0"></i>
-              <span><strong>Capacity development</strong> that strengthens teams and systems long-term.</span>
-            </li>
-            <li class="flex items-start gap-3 text-slate-700 text-sm sm:text-base">
-              <i class="fa-solid fa-circle-check text-blue-600 mt-1 shrink-0"></i>
-              <span><strong>Business and management guidance</strong> that supports sustainable action.</span>
-            </li>
-            <li class="flex items-start gap-3 text-slate-700 text-sm sm:text-base">
-              <i class="fa-solid fa-circle-check text-blue-600 mt-1 shrink-0"></i>
-              <span><strong>Data-informed decisions</strong> backed by rigorous professional analysis.</span>
-            </li>
-          </ul>
-        </div>
-
-        <div>
-          <a href="{{ url_for('public.about') }}" class="inline-flex items-center gap-2 font-semibold text-blue-600 hover:text-blue-700 hover:underline">
-            Read More About Us <i class="fa-solid fa-arrow-right text-xs"></i>
-          </a>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-<!-- Our Services Section -->
-<section class="py-20 bg-slate-50 border-y border-slate-200">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="text-center max-w-3xl mx-auto mb-16 space-y-3">
-      <span class="text-blue-600 font-semibold text-sm tracking-wider uppercase">What We Deliver</span>
-      <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900">Our Services</h2>
-      <p class="text-slate-600 text-lg">A focused portfolio of solutions for private organizations, public institutions, development partners, and growth-minded businesses.</p>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-      {% for service in services %}
-      {% if service.slug == 'digital-solutions-it' %}
-        {% set service_image = 'image4.png' %}
-      {% elif service.slug == 'human-resource-organizational-development' %}
-        {% set service_image = 'image6.png' %}
-      {% elif service.slug == 'business-management-consulting' %}
-        {% set service_image = 'image7.png' %}
-      {% elif service.slug == 'digital-marketing-creative' %}
-        {% set service_image = 'image5.png' %}
-      {% elif service.slug == 'data-analytics-business-intelligence' %}
-        {% set service_image = 'image.png' %}
-      {% else %}
-        {% set service_image = 'image3.png' %}
-      {% endif %}
-      <article class="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col justify-between group hover:-translate-y-1">
-        <div class="h-40 bg-slate-100 relative overflow-hidden">
-          <img src="{{ url_for('static', filename='images/' ~ service_image) }}" alt="{{ service.name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90" loading="lazy" />
-          <div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent"></div>
-          <div class="absolute bottom-3 left-4">
-            <div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center text-lg shadow-md">
-              <i class="fa-solid {{ service.icon or 'fa-briefcase' }}"></i>
-            </div>
-          </div>
-        </div>
-
-        <div class="p-6 flex-1 flex flex-col justify-between">
-          <div>
-            <h3 class="text-xl font-bold text-slate-900 mb-2 group-hover:text-blue-600 transition-colors">
-              {{ service.name }}
-            </h3>
-            <p class="text-slate-600 text-sm mb-6 leading-relaxed">
-              {{ service.short_description }}
-            </p>
-
-            <div class="pt-4 border-t border-slate-100">
-              <ul class="space-y-2 mb-6">
-                {% if service.slug == 'digital-solutions-it' %}
-                  <li class="text-xs text-slate-600 flex items-center gap-2"><i class="fa-solid fa-check text-blue-500"></i> Web design & development</li>
-                  <li class="text-xs text-slate-600 flex items-center gap-2"><i class="fa-solid fa-check text-blue-500"></i> Business portals</li>
-                  <li class="text-xs text-slate-600 flex items-center gap-2"><i class="fa-solid fa-check text-blue-500"></i> Cloud hosting support</li>
-                {% elif service.slug == 'human-resource-organizational-development' %}
-                  <li class="text-xs text-slate-600 flex items-center gap-2"><i class="fa-solid fa-check text-blue-500"></i> Training needs assessment</li>
-                  <li class="text-xs text-slate-600 flex items-center gap-2"><i class="fa-solid fa-check text-blue-500"></i> Workforce development</li>
-                  <li class="text-xs text-slate-600 flex items-center gap-2"><i class="fa-solid fa-check text-blue-500"></i> Team building</li>
-                {% elif service.slug == 'business-management-consulting' %}
-                  <li class="text-xs text-slate-600 flex items-center gap-2"><i class="fa-solid fa-check text-blue-500"></i> Business planning</li>
-                  <li class="text-xs text-slate-600 flex items-center gap-2"><i class="fa-solid fa-check text-blue-500"></i> Project advisory</li>
-                  <li class="text-xs text-slate-600 flex items-center gap-2"><i class="fa-solid fa-check text-blue-500"></i> Process improvement</li>
-                {% elif service.slug == 'digital-marketing-creative' %}
-                  <li class="text-xs text-slate-600 flex items-center gap-2"><i class="fa-solid fa-check text-blue-500"></i> Brand identity</li>
-                  <li class="text-xs text-slate-600 flex items-center gap-2"><i class="fa-solid fa-check text-blue-500"></i> SEO support</li>
-                  <li class="text-xs text-slate-600 flex items-center gap-2"><i class="fa-solid fa-check text-blue-500"></i> Creative content</li>
-                {% else %}
-                  <li class="text-xs text-slate-600 flex items-center gap-2"><i class="fa-solid fa-check text-blue-500"></i> Turn insights into action</li>
-                  <li class="text-xs text-slate-600 flex items-center gap-2"><i class="fa-solid fa-check text-blue-500"></i> Dashboard reporting</li>
-                  <li class="text-xs text-slate-600 flex items-center gap-2"><i class="fa-solid fa-check text-blue-500"></i> Performance analysis</li>
-                {% endif %}
-              </ul>
-            </div>
-          </div>
-
-          <a href="{{ url_for('public.service_detail', slug=service.slug) }}" class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700 mt-2">
-            Learn details <i class="fa-solid fa-chevron-right text-xs"></i>
-          </a>
-        </div>
-      </article>
-      {% endfor %}
-    </div>
-  </div>
-</section>
-
-<!-- Why Choose Axiom Section -->
-<section class="py-20 bg-white">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="text-center max-w-2xl mx-auto mb-16 space-y-3">
-      <span class="text-blue-600 font-semibold text-sm tracking-wider uppercase">Our Advantage</span>
-      <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900">Why Choose Axiom</h2>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-      <div class="p-6 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:border-blue-200 hover:shadow-lg transition">
-        <div class="w-10 h-10 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center font-bold mb-4">01</div>
-        <h3 class="text-lg font-bold text-slate-900 mb-2">Tailored Solutions</h3>
-        <p class="text-slate-600 text-sm leading-relaxed">We align recommendations strictly to your goals, operating context, constraints, and realities.</p>
-      </div>
-
-      <div class="p-6 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:border-blue-200 hover:shadow-lg transition">
-        <div class="w-10 h-10 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold mb-4">02</div>
-        <h3 class="text-lg font-bold text-slate-900 mb-2">Implementation-Focused</h3>
-        <p class="text-slate-600 text-sm leading-relaxed">Our work translates into practical action, operational alignment, and measurable performance gains.</p>
-      </div>
-
-      <div class="p-6 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:border-blue-200 hover:shadow-lg transition">
-        <div class="w-10 h-10 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold mb-4">03</div>
-        <h3 class="text-lg font-bold text-slate-900 mb-2">Technology + Business</h3>
-        <p class="text-slate-600 text-sm leading-relaxed">We connect digital tools, organizational development, and strategic thinking seamlessly.</p>
-      </div>
-
-      <div class="p-6 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:border-blue-200 hover:shadow-lg transition">
-        <div class="w-10 h-10 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center font-bold mb-4">04</div>
-        <h3 class="text-lg font-bold text-slate-900 mb-2">Knowledge Transfer</h3>
-        <p class="text-slate-600 text-sm leading-relaxed">We strengthen internal capacity so teams can sustain, manage, and scale systems over time.</p>
-      </div>
-
-      <div class="p-6 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:border-blue-200 hover:shadow-lg transition">
-        <div class="w-10 h-10 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center font-bold mb-4">05</div>
-        <h3 class="text-lg font-bold text-slate-900 mb-2">Professional Communication</h3>
-        <p class="text-slate-600 text-sm leading-relaxed">Clear collaboration, accountable execution, and professional integrity guide every engagement.</p>
-      </div>
-
-      <div class="p-6 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:border-blue-200 hover:shadow-lg transition">
-        <div class="w-10 h-10 rounded-lg bg-sky-100 text-sky-600 flex items-center justify-center font-bold mb-4">06</div>
-        <h3 class="text-lg font-bold text-slate-900 mb-2">Outcome Orientation</h3>
-        <p class="text-slate-600 text-sm leading-relaxed">Every recommendation is designed to refine clarity, efficiency, and decision quality.</p>
-      </div>
-    </div>
-
-    <!-- Visual Image Banner -->
-    <div class="relative rounded-3xl overflow-hidden shadow-xl border border-slate-200 bg-slate-900">
-      <div class="absolute inset-0 z-0 opacity-30 bg-cover bg-center" style="background-image: url('{{ url_for('static', filename='images/image3.png') }}');"></div>
-      <div class="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-900/90 to-transparent z-0"></div>
-      
-      <div class="relative z-10 p-8 sm:p-12 lg:p-16 max-w-2xl space-y-4">
-        <span class="text-blue-400 font-semibold text-xs uppercase tracking-widest">Driven by Impact</span>
-        <h3 class="text-2xl sm:text-3xl font-bold text-white leading-snug">Empowering institutional excellence through collaborative partnership and agile execution.</h3>
-        <p class="text-slate-300 text-sm sm:text-base">We combine deep domain expertise with modern digital capabilities to deliver results that endure.</p>
-        <div class="pt-2">
-          <a href="{{ url_for('public.contact') }}" class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm transition">
-            Schedule a Consultation <i class="fa-solid fa-arrow-right text-xs"></i>
-          </a>
-        </div>
-      </div>
-    </div>
-
-  </div>
-</section>
-
-<!-- Industries We Serve Section -->
-<section class="py-20 bg-slate-900 text-white relative overflow-hidden">
-  <div class="absolute inset-0 z-0 opacity-10 bg-cover bg-center" style="background-image: url('{{ url_for('static', filename='images/image4.png') }}');"></div>
-  
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-    <div class="text-center max-w-2xl mx-auto mb-16 space-y-3">
-      <span class="text-blue-400 font-semibold text-sm tracking-wider uppercase">Our Footprint</span>
-      <h2 class="text-3xl sm:text-4xl font-extrabold text-white">Industries & Organizations We Serve</h2>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div class="bg-slate-800/80 border border-slate-700/80 p-6 rounded-2xl hover:border-blue-500/50 transition backdrop-blur-md">
-        <i class="fa-solid fa-building-columns text-2xl text-blue-400 mb-4"></i>
-        <h3 class="text-xl font-bold text-white mb-2">Government</h3>
-        <p class="text-slate-300 text-sm mb-4 leading-relaxed">Agencies, departments, and ministries looking for operational improvements, systems enablement, and organizational capacity.</p>
-        <a href="{{ url_for('public.who_we_serve') }}" class="text-xs font-semibold text-blue-400 hover:text-blue-300">Explore opportunities &rarr;</a>
-      </div>
-
-      <div class="bg-slate-800/80 border border-slate-700/80 p-6 rounded-2xl hover:border-blue-500/50 transition backdrop-blur-md">
-        <i class="fa-solid fa-chart-line text-2xl text-emerald-400 mb-4"></i>
-        <h3 class="text-xl font-bold text-white mb-2">Private Sector</h3>
-        <p class="text-slate-300 text-sm mb-4 leading-relaxed">Corporate organizations seeking better operations, digital strategy, data insight, and professional advisory support.</p>
-        <a href="{{ url_for('public.who_we_serve') }}" class="text-xs font-semibold text-emerald-400 hover:text-emerald-300">Learn more &rarr;</a>
-      </div>
-
-      <div class="bg-slate-800/80 border border-slate-700/80 p-6 rounded-2xl hover:border-blue-500/50 transition backdrop-blur-md">
-        <i class="fa-solid fa-handshake text-2xl text-indigo-400 mb-4"></i>
-        <h3 class="text-xl font-bold text-white mb-2">Development Partners</h3>
-        <p class="text-slate-300 text-sm mb-4 leading-relaxed">Implementation partners requiring support in project execution, planning, monitoring and capacity strengthening.</p>
-        <a href="{{ url_for('public.contact') }}" class="text-xs font-semibold text-indigo-400 hover:text-indigo-300">Request advisory &rarr;</a>
-      </div>
-
-      <div class="bg-slate-800/80 border border-slate-700/80 p-6 rounded-2xl hover:border-blue-500/50 transition backdrop-blur-md">
-        <i class="fa-solid fa-rocket text-2xl text-amber-400 mb-4"></i>
-        <h3 class="text-xl font-bold text-white mb-2">SMEs</h3>
-        <p class="text-slate-300 text-sm mb-4 leading-relaxed">Small and growing businesses needing practical digital and operational support to scale efficiently.</p>
-        <a href="{{ url_for('public.who_we_serve') }}" class="text-xs font-semibold text-amber-400 hover:text-amber-300">See support areas &rarr;</a>
-      </div>
-
-      <div class="bg-slate-800/80 border border-slate-700/80 p-6 rounded-2xl hover:border-blue-500/50 transition backdrop-blur-md">
-        <i class="fa-solid fa-graduation-cap text-2xl text-sky-400 mb-4"></i>
-        <h3 class="text-xl font-bold text-white mb-2">Education & Institutions</h3>
-        <p class="text-slate-300 text-sm mb-4 leading-relaxed">Training institutions and professional networks seeking development, communications, and capability-building support.</p>
-        <a href="{{ url_for('public.contact') }}" class="text-xs font-semibold text-sky-400 hover:text-sky-300">Discuss needs &rarr;</a>
-      </div>
-
-      <div class="bg-slate-800/80 border border-slate-700/80 p-6 rounded-2xl hover:border-blue-500/50 transition backdrop-blur-md">
-        <i class="fa-solid fa-lightbulb text-2xl text-rose-400 mb-4"></i>
-        <h3 class="text-xl font-bold text-white mb-2">Entrepreneurs</h3>
-        <p class="text-slate-300 text-sm mb-4 leading-relaxed">Individuals and founders looking for strategic guidance, digital positioning, and practical action plans.</p>
-        <a href="{{ url_for('public.contact') }}" class="text-xs font-semibold text-rose-400 hover:text-rose-300">Start a conversation &rarr;</a>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- Project Experience Section -->
-<section class="py-20 bg-slate-50 border-b border-slate-200">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="flex flex-col md:flex-row md:items-end justify-between mb-12">
-      <div>
-        <span class="text-blue-600 font-semibold text-sm tracking-wider uppercase">Case Studies & Work</span>
-        <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-1">Project Experience</h2>
-      </div>
-      <p class="text-slate-600 text-sm max-w-md mt-2 md:mt-0">Showcasing verified engagements and invite discussion about prospective solutions.</p>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-      {% for project in projects %}
-      <article class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group">
-        <div class="h-48 bg-slate-200 relative overflow-hidden">
-          <img src="{{ project.featured_image or url_for('static', filename='images/image7.png') }}" alt="{{ project.title }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" loading="lazy" />
-        </div>
-        <div class="p-6 flex-1 flex flex-col justify-between space-y-4">
-          <div>
-            <h3 class="text-lg font-bold text-slate-900 mb-2 group-hover:text-blue-600 transition">
-              {{ project.title }}
-            </h3>
-            <p class="text-slate-600 text-sm leading-relaxed">
-              {{ project.summary[:160] }}{% if project.summary|length > 160 %}...{% endif %}
-            </p>
-          </div>
-          <a href="{{ url_for('public.project_detail', slug=project.slug) }}" class="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-700 pt-2 border-t border-slate-100">
-            View project <i class="fa-solid fa-arrow-right text-xs"></i>
-          </a>
-        </div>
-      </article>
-      {% else %}
-      <div class="col-span-full bg-white border border-slate-200 rounded-2xl p-8 text-center max-w-xl mx-auto space-y-4 shadow-sm">
-        <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto text-xl">
-          <i class="fa-solid fa-folder-open"></i>
-        </div>
-        <h3 class="text-xl font-bold text-slate-900">Portfolio Currently Being Updated</h3>
-        <p class="text-slate-600 text-sm">We are preparing a stronger portfolio of verified work. Share your requirements and we can discuss the best path forward.</p>
-        <a href="{{ url_for('public.contact') }}" class="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-sm transition">
-          Discuss Your Project
-        </a>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-</section>
-
-<!-- Latest Insights Section -->
-<section class="py-20 bg-white">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="text-center max-w-2xl mx-auto mb-16 space-y-3">
-      <span class="text-blue-600 font-semibold text-sm tracking-wider uppercase">Thought Leadership</span>
-      <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900">Latest Insights</h2>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-      {% for article in recent_articles %}
-      <article class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-lg transition flex flex-col justify-between group">
-        <div class="h-44 bg-slate-100 relative overflow-hidden">
-          <img src="{{ article.featured_image or url_for('static', filename='images/image5.png') }}" alt="{{ article.title }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" loading="lazy">
-        </div>
-        
-        <div class="p-6 space-y-3 flex-1 flex flex-col justify-between">
-          <div class="space-y-3">
-            <div class="text-xs font-semibold text-blue-600 uppercase tracking-wide">
-              {{ article.category.name if article.category else 'Insights' }} · {{ article.published_at.strftime('%d %b %Y') if article.published_at else 'Published' }}
-            </div>
-            <h3 class="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition">
-              {{ article.title }}
-            </h3>
-            <p class="text-slate-600 text-sm leading-relaxed">
-              {{ article.excerpt }}
-            </p>
-          </div>
-          <a href="{{ url_for('public.article_detail', slug=article.slug) }}" class="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-700 mt-6 pt-4 border-t border-slate-100">
-            Read Article <i class="fa-solid fa-arrow-right text-xs"></i>
-          </a>
-        </div>
-      </article>
-      {% else %}
-      <div class="col-span-full bg-slate-50 border border-slate-200/80 rounded-2xl p-8 text-center max-w-md mx-auto">
-        <i class="fa-solid fa-newspaper text-3xl text-slate-400 mb-3 block"></i>
-        <h3 class="text-lg font-bold text-slate-800 mb-1">Insights Coming Soon</h3>
-        <p class="text-slate-500 text-sm">New thought leadership and practical guidance will be published here as the Axiom knowledge base grows.</p>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-</section>
-
-<!-- Partner / CTA Banner -->
-<section class="py-16 bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-900 text-white relative overflow-hidden">
-  <div class="absolute inset-0 z-0 opacity-15 bg-cover bg-center" style="background-image: url('{{ url_for('static', filename='images/image6.png') }}');"></div>
-  <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6 relative z-10">
-    <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight">Let’s Build Solutions That Create Lasting Value.</h2>
-    <p class="text-blue-100 text-base sm:text-lg max-w-2xl mx-auto font-normal leading-relaxed">
-      We welcome partnerships with government institutions, businesses, development partners, and other organizations seeking practical solutions, strategic advisory, and sustainable outcomes.
-    </p>
-    <div>
-      <a href="{{ url_for('public.contact') }}" class="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-white text-blue-900 font-bold hover:bg-slate-100 transition-all shadow-xl hover:-translate-y-0.5">
-        Partner With Us
-        <i class="fa-solid fa-arrow-right"></i>
-      </a>
-    </div>
-  </div>
-</section>
-
-<!-- Contact Info Block -->
-<section class="py-20 bg-slate-900 text-white">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-      <div class="lg:col-span-6 space-y-4">
-        <span class="text-blue-400 font-semibold text-sm tracking-wider uppercase">Get In Touch</span>
-        <h2 class="text-3xl sm:text-4xl font-extrabold text-white">Contact Axiom Gateway Consult</h2>
-        <p class="text-slate-300 text-base leading-relaxed">
-          Reach out for consultation, service requests, strategic engagement, training, or partnership discussions.
-        </p>
-      </div>
-
-      <div class="lg:col-span-6 bg-slate-800 border border-slate-700/80 p-8 rounded-2xl space-y-6 shadow-xl">
-        <div class="space-y-4">
-          <div class="flex items-start gap-4">
-            <div class="w-10 h-10 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0">
-              <i class="fa-solid fa-envelope"></i>
-            </div>
-            <div>
-              <p class="text-xs text-slate-400 font-medium uppercase">Email</p>
-              <a href="mailto:{{ company_settings.contact_email }}" class="text-slate-200 font-semibold hover:text-blue-400 transition">
-                {{ company_settings.contact_email }}
-              </a>
-            </div>
-          </div>
-
-          <div class="flex items-start gap-4">
-            <div class="w-10 h-10 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
-              <i class="fa-solid fa-phone"></i>
-            </div>
-            <div>
-              <p class="text-xs text-slate-400 font-medium uppercase">Telephone</p>
-              <a href="tel:{{ company_settings.telephone }}" class="text-slate-200 font-semibold hover:text-emerald-400 transition">
-                {{ company_settings.telephone }}
-              </a>
-            </div>
-          </div>
-
-          <div class="flex items-start gap-4">
-            <div class="w-10 h-10 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
-              <i class="fa-solid fa-location-dot"></i>
-            </div>
-            <div>
-              <p class="text-xs text-slate-400 font-medium uppercase">Office</p>
-              <p class="text-slate-200 font-medium">
-                {{ company_settings.office_address }}
+              <h2 class="text-xl sm:text-2xl font-bold text-white tracking-tight">
+                Driving Sustainable Transformation
+              </h2>
+              <p class="text-slate-300 text-xs sm:text-sm leading-relaxed font-normal">
+                We partner with public and private sector leadership to design resilient digital architecture, build workforce talent, and navigate strategic market transitions.
               </p>
             </div>
           </div>
-        </div>
 
-        <div class="pt-4 border-t border-slate-700">
-          <a href="{{ url_for('public.contact') }}" class="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold transition">
-            Send an Enquiry
-          </a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+<!-- ============ WHO WE ARE ============ -->
+<section class="py-24 sm:py-32 bg-white">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-16 lg:gap-20 items-center">
+    <div class="space-y-6">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-600 font-bold text-xs tracking-wider uppercase">
+        <i class="fa-solid fa-circle text-[8px]"></i> About Our Firm
+      </div>
+      <h2 class="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight leading-tight">Who We Are</h2>
+      <p class="text-slate-600 text-base sm:text-lg leading-relaxed font-normal">
+        Axiom Gateway Consult works at the intersection of technology, people development, business consulting, communication, and data analytics. We help organizations make better decisions, improve operational performance, and create lasting value through practical implementation.
+      </p>
+      
+      <div class="grid sm:grid-cols-2 gap-4 pt-2">
+        {% for icon, title, text in [
+          ('fa-laptop-code', 'Technology solutions', 'Tailored to real operational needs.'),
+          ('fa-people-group', 'Capacity development', 'Strengthening teams long-term.'),
+          ('fa-chart-line', 'Business guidance', 'Supporting sustainable growth.'),
+          ('fa-chart-pie', 'Data-informed', 'Decisions backed by professional analysis.')
+        ] %}
+        <div class="flex items-start gap-4 p-5 rounded-2xl bg-slate-50/80 border border-slate-200/60 hover:border-blue-200 transition">
+          <div class="w-11 h-11 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-blue-600/20"><i class="fa-solid {{ icon }} text-sm"></i></div>
+          <div><h3 class="text-sm font-bold text-slate-900">{{ title }}</h3><p class="text-xs text-slate-600 mt-1 leading-relaxed">{{ text }}</p></div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="pt-4">
+        <a href="{{ url_for('public.about') }}" class="inline-flex items-center gap-2.5 font-bold text-blue-600 hover:text-blue-700 group">
+          <span>Read More About Us</span>
+          <div class="w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition">
+            <i class="fa-solid fa-arrow-right text-xs"></i>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <div class="relative h-[28rem] sm:h-[36rem]">
+      <img src="{{ url_for('static', filename='images/image6.png') }}" alt="Axiom team and consulting work" class="absolute top-0 right-0 w-4/5 h-4/5 object-cover rounded-3xl shadow-2xl" loading="lazy">
+      <img src="{{ url_for('static', filename='images/image3.png') }}" alt="Axiom client collaboration" class="absolute bottom-0 left-0 w-3/5 h-1/2 object-cover rounded-3xl border-8 border-white shadow-2xl" loading="lazy">
+      
+      <div class="absolute top-8 left-0 flex items-center gap-3.5 bg-white/95 backdrop-blur rounded-2xl shadow-xl border border-slate-100 px-5 py-3.5">
+        <div class="w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-600/30"><i class="fa-solid fa-bullseye text-lg"></i></div>
+        <div>
+          <p class="text-[11px] font-bold text-blue-600 uppercase tracking-wider">Core Mission</p>
+          <p class="text-sm font-black text-slate-900">Bridging Technology & Human Capability</p>
         </div>
       </div>
     </div>
   </div>
 </section>
+
+<!-- ============ SERVICES BENTO GRID ============ -->
+<section class="py-24 sm:py-32 bg-slate-50/70 border-y border-slate-200/80">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-14">
+      <div class="space-y-3 max-w-2xl">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-600 font-bold text-xs tracking-wider uppercase">
+          <i class="fa-solid fa-circle text-[8px]"></i> What We Deliver
+        </div>
+        <h2 class="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight">Our Services</h2>
+      </div>
+      <p class="text-slate-600 text-base max-w-md font-normal">A focused portfolio built for private organizations, public institutions, development partners, and growth-minded businesses.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {% for service in services %}
+      {% set tags = svc_tags.get(service.slug, ['Turn insights into action', 'Dashboard reporting', 'Performance analysis']) %}
+      <article class="group relative overflow-hidden rounded-3xl bg-slate-950 min-h-[24rem] flex {% if loop.first %}lg:col-span-2{% endif %} border border-slate-800/80 shadow-xl">
+        <img src="{{ url_for('static', filename='images/' ~ svc_img.get(service.slug, 'image3.png')) }}" alt="{{ service.name }}" class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-75 group-hover:scale-105 transition duration-700" loading="lazy">
+        <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-slate-950/20"></div>
+        <div class="relative z-10 mt-auto p-6 sm:p-8 space-y-4 w-full">
+          <div class="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center text-lg shadow-lg shadow-blue-600/30"><i class="fa-solid {{ service.icon or 'fa-briefcase' }}"></i></div>
+          <div class="space-y-1.5">
+            <h3 class="text-xl sm:text-2xl font-bold text-white">{{ service.name }}</h3>
+            <p class="text-slate-300 text-sm leading-relaxed max-w-xl font-normal">{{ service.short_description }}</p>
+          </div>
+          <div class="flex flex-wrap gap-2 pt-1">
+            {% for tag in tags %}<span class="px-3 py-1 rounded-full bg-white/10 border border-white/15 backdrop-blur text-[11px] font-medium text-slate-100">{{ tag }}</span>{% endfor %}
+          </div>
+          <div class="pt-2">
+            <a href="{{ url_for('public.service_detail', slug=service.slug) }}" class="inline-flex items-center gap-2 text-sm font-bold text-blue-300 hover:text-white group/link">
+              <span>Learn details</span> <i class="fa-solid fa-chevron-right text-xs group-hover/link:translate-x-1 transition"></i>
+            </a>
+          </div>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- ============ ACADEMY COURSES ============ -->
+<section class="py-24 sm:py-32 bg-white overflow-hidden">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-12">
+      <div class="space-y-3 max-w-2xl">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-600 font-bold text-xs tracking-wider uppercase">
+          <i class="fa-solid fa-circle text-[8px]"></i> Axiom Academy
+        </div>
+        <h2 class="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight leading-tight">Build practical skills for what comes next.</h2>
+        <p class="text-slate-600 text-base sm:text-lg">Explore learning opportunities from Axiom Academy. Course listings and prices are shown from the published catalogue.</p>
+      </div>
+      <div class="flex flex-wrap gap-3 shrink-0">
+        <a href="{{ url_for('public.academy_courses') }}" class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3.5 font-bold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700">Browse all courses <i class="fa-solid fa-arrow-right text-xs" aria-hidden="true"></i></a>
+        <a href="{{ url_for('student.student_register') }}" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-6 py-3.5 font-semibold text-slate-700 transition hover:border-blue-300 hover:text-blue-700 bg-slate-50/50">Create a learner account</a>
+      </div>
+    </div>
+
+    <div class="snap-row flex gap-6 overflow-x-auto pb-6 -mx-4 px-4 sm:mx-0 sm:px-0">
+      {% for course in featured_courses %}
+      <article class="w-72 sm:w-80 shrink-0 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group">
+        <div class="relative overflow-hidden">
+          <img src="{{ course.cover_image or url_for('static', filename='images/image2.png') }}" alt="{{ course.title }}" class="h-48 w-full object-cover group-hover:scale-105 transition duration-500" loading="lazy">
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent"></div>
+          <span class="absolute top-3 left-3 rounded-full bg-white/95 backdrop-blur px-3 py-1 text-xs font-bold text-blue-800 shadow-md">{{ 'Free' if course.is_free else course.currency ~ ' ' ~ ('%.2f'|format(course.price)) }}</span>
+          <span class="absolute top-3 right-3 text-xs font-semibold text-slate-700 bg-white/95 backdrop-blur px-2.5 py-1 rounded-lg shadow-md">{{ course.difficulty }}</span>
+        </div>
+        <div class="p-6 flex-1 flex flex-col justify-between gap-5">
+          <div class="space-y-2">
+            <h3 class="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition leading-snug">{{ course.title }}</h3>
+            <p class="text-sm leading-relaxed text-slate-600 font-normal line-clamp-2">{{ course.short_description }}</p>
+          </div>
+          <div class="pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
+            <p class="text-xs font-medium text-slate-500 truncate">{{ course.instructor.full_name if course.instructor else course.instructor_name }}</p>
+            <a href="{{ url_for('public.academy_course_detail', slug=course.slug) }}" class="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-800 shrink-0">Explore <i class="fa-solid fa-arrow-right text-[10px]" aria-hidden="true"></i></a>
+          </div>
+        </div>
+      </article>
+      {% else %}
+      <div class="w-full rounded-3xl border border-dashed border-slate-300 bg-slate-50/80 p-12 text-center">
+        <h3 class="text-lg font-bold text-slate-900">Course catalogue coming soon</h3>
+        <p class="mt-2 text-sm text-slate-600">New courses will appear here when they are published in Axiom Academy.</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- ============ WHY AXIOM ADVANTAGE ============ -->
+<section class="py-24 sm:py-32 bg-slate-50/50 border-t border-slate-200/80">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-12 gap-12 lg:gap-16">
+    <div class="lg:col-span-5">
+      <div class="lg:sticky lg:top-32 space-y-6">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-600 font-bold text-xs tracking-wider uppercase">
+          <i class="fa-solid fa-circle text-[8px]"></i> Our Advantage
+        </div>
+        <h2 class="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight leading-tight">Why Choose Axiom</h2>
+        
+        <div class="relative rounded-3xl overflow-hidden bg-slate-950 shadow-2xl border border-slate-800">
+          <img src="{{ url_for('static', filename='images/image3.png') }}" alt="Axiom consultants collaborating with a client" class="w-full h-72 object-cover opacity-60" loading="lazy">
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent"></div>
+          <div class="absolute inset-x-0 bottom-0 p-8 space-y-4">
+            <p class="text-white font-bold text-base leading-snug">Empowering institutional excellence through collaborative partnership and agile execution.</p>
+            <a href="{{ url_for('public.contact') }}" class="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm transition shadow-lg shadow-blue-600/30">Schedule a Consultation <i class="fa-solid fa-arrow-right text-xs"></i></a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="lg:col-span-7 divide-y divide-slate-200/80 border-y border-slate-200/80">
+      {% for icon, color, title, text in [
+        ('fa-bullseye', 'blue', 'Tailored Solutions', 'We align recommendations strictly to your goals, operating context, constraints, and realities.'),
+        ('fa-screwdriver-wrench', 'indigo', 'Implementation-Focused', 'Our work is designed to translate recommendations into practical action and stronger operational alignment.'),
+        ('fa-link', 'emerald', 'Technology + Business', 'We connect digital tools, organizational development, and strategic thinking seamlessly.'),
+        ('fa-people-arrows', 'amber', 'Knowledge Transfer', 'We strengthen internal capacity so teams can sustain, manage, and scale systems over time.'),
+        ('fa-comments', 'rose', 'Professional Communication', 'Clear collaboration, accountable execution, and professional integrity guide every engagement.'),
+        ('fa-flag-checkered', 'sky', 'Outcome Orientation', 'Every recommendation is designed to refine clarity, efficiency, and decision quality.')
+      ] %}
+      <div class="flex items-start gap-6 py-8 group">
+        <div class="w-12 h-12 rounded-2xl bg-{{ color }}-50 text-{{ color }}-600 flex items-center justify-center shrink-0 group-hover:bg-{{ color }}-600 group-hover:text-white transition shadow-sm"><i class="fa-solid {{ icon }} text-base"></i></div>
+        <div>
+          <h3 class="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition">{{ title }}</h3>
+          <p class="text-slate-600 text-sm leading-relaxed mt-1.5 font-normal max-w-xl">{{ text }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- ============ INDUSTRIES WE SERVE ============ -->
+<section class="py-24 sm:py-32 bg-slate-950 text-white relative overflow-hidden">
+  <div class="absolute inset-0 opacity-10 bg-cover bg-center" style="background-image: url('{{ url_for('static', filename='images/image4.png') }}');"></div>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <div class="max-w-3xl mb-14 space-y-3">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold text-xs tracking-wider uppercase">
+        <i class="fa-solid fa-circle text-[8px]"></i> Our Footprint
+      </div>
+      <h2 class="text-3xl sm:text-5xl font-black tracking-tight">Industries & Organizations We Serve</h2>
+    </div>
+
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-px bg-slate-800/80 border border-slate-800/80 rounded-3xl overflow-hidden shadow-2xl">
+      {% for icon, color, title, text, route, cta in [
+        ('fa-building-columns', 'blue', 'Government', 'Agencies, departments, and ministries looking for operational improvements, systems enablement, and organizational capacity.', 'public.who_we_serve', 'Explore opportunities'),
+        ('fa-chart-line', 'emerald', 'Private Sector', 'Corporate organizations seeking better operations, digital strategy, data insight, and professional advisory support.', 'public.who_we_serve', 'Learn more'),
+        ('fa-handshake', 'indigo', 'Development Partners', 'Implementation partners requiring support in project execution, planning, monitoring and capacity strengthening.', 'public.contact', 'Request advisory'),
+        ('fa-rocket', 'amber', 'SMEs', 'Small and growing businesses needing practical digital and operational support to scale efficiently.', 'public.who_we_serve', 'See support areas'),
+        ('fa-graduation-cap', 'sky', 'Education & Institutions', 'Training institutions and professional networks seeking development, communications, and capability-building support.', 'public.contact', 'Discuss needs'),
+        ('fa-globe', 'rose', 'Non-Profits & NGOs', 'Mission-driven organizations requiring robust monitoring, evaluation, capacity building, and communication tools.', 'public.who_we_serve', 'Learn more')
+      ] %}
+      <a href="{{ url_for(route) }}" class="group bg-slate-950 p-8 hover:bg-slate-900/90 transition-all duration-300 flex flex-col gap-5">
+        <div class="flex items-center justify-between">
+          <div class="w-12 h-12 rounded-2xl bg-{{ color }}-500/10 text-{{ color }}-400 flex items-center justify-center text-xl group-hover:bg-{{ color }}-600 group-hover:text-white transition shadow-sm"><i class="fa-solid {{ icon }}"></i></div>
+          <div class="w-8 h-8 rounded-full bg-slate-900 group-hover:bg-slate-800 flex items-center justify-center transition">
+            <i class="fa-solid fa-arrow-up-right-from-square text-xs text-slate-500 group-hover:text-{{ color }}-400 transition"></i>
+          </div>
+        </div>
+        <div class="space-y-1.5 flex-1">
+          <h3 class="text-xl font-bold text-white group-hover:text-blue-300 transition">{{ title }}</h3>
+          <p class="text-slate-300 text-sm leading-relaxed font-normal">{{ text }}</p>
+        </div>
+        <div class="pt-2 flex items-center gap-2 text-xs font-bold text-{{ color }}-400">
+          <span>{{ cta }}</span>
+          <i class="fa-solid fa-arrow-right text-[10px] group-hover:translate-x-1 transition"></i>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- Typewriter Script -->
+<script>
+  (function () {
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    document.querySelectorAll('.tw').forEach(function (el, idx) {
+      var phrases = JSON.parse(el.getAttribute('data-phrases'));
+      if (reduce) { el.textContent = phrases[0]; el.classList.remove('tw-cursor'); return; }
+      var p = 0, i = 0, deleting = false;
+      function tick() {
+        var full = phrases[p];
+        el.textContent = full.slice(0, i);
+        var delay = deleting ? 28 : 55;
+        if (!deleting && i === full.length) { deleting = true; delay = 1800; }
+        else if (deleting && i === 0) { deleting = false; p = (p + 1) % phrases.length; delay = 350; }
+        else { i += deleting ? -1 : 1; }
+        setTimeout(tick, delay);
+      }
+      setTimeout(tick, 400 + idx * 350);
+    });
+  })();
+</script>
 {% endblock %}

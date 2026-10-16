@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}Admin{% endblock %} | Axiom Admin</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=DM+Serif+Display&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/brand.css') }}">
     <script src="https://kit.fontawesome.com/a076d7f4d2.js" crossorigin="anonymous"></script>
   </head>
   <body class="admin-body">
@@ -14,16 +18,16 @@
           <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="Axiom logo">
         </div>
         <nav class="admin-nav">
-          <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
-          <a href="{{ url_for('admin.enquiries') }}">Enquiries</a>
-          <a href="{{ url_for('admin.articles') }}">Articles</a>
-          <a href="{{ url_for('admin.categories') }}">Categories</a>
-          <a href="{{ url_for('admin.projects_admin') }}">Projects</a>
-          <a href="{{ url_for('admin.courses_admin') }}">Academy courses</a>
-          <a href="{{ url_for('admin.instructors_admin') }}">Instructor applications</a>
-          <a href="{{ url_for('admin.course_payments') }}">Course payment receipts</a>
-          <a href="{{ url_for('admin.products_admin') }}">Academy resources</a>
-          <a href="{{ url_for('admin.settings') }}">Company settings</a>
+          <a href="{{ url_for('admin.dashboard') }}" {% if request.endpoint == 'admin.dashboard' %}aria-current="page"{% endif %}>Dashboard</a>
+          <a href="{{ url_for('admin.enquiries') }}" {% if request.endpoint == 'admin.enquiries' %}aria-current="page"{% endif %}>Enquiries</a>
+          <a href="{{ url_for('admin.articles') }}" {% if request.endpoint == 'admin.articles' %}aria-current="page"{% endif %}>Articles</a>
+          <a href="{{ url_for('admin.categories') }}" {% if request.endpoint == 'admin.categories' %}aria-current="page"{% endif %}>Categories</a>
+          <a href="{{ url_for('admin.projects_admin') }}" {% if request.endpoint == 'admin.projects_admin' %}aria-current="page"{% endif %}>Projects</a>
+          <a href="{{ url_for('admin.courses_admin') }}" {% if request.endpoint == 'admin.courses_admin' %}aria-current="page"{% endif %}>Academy courses</a>
+          <a href="{{ url_for('admin.instructors_admin') }}" {% if request.endpoint == 'admin.instructors_admin' %}aria-current="page"{% endif %}>Instructor applications</a>
+          <a href="{{ url_for('admin.course_payments') }}" {% if request.endpoint == 'admin.course_payments' %}aria-current="page"{% endif %}>Course payment receipts</a>
+          <a href="{{ url_for('admin.products_admin') }}" {% if request.endpoint == 'admin.products_admin' %}aria-current="page"{% endif %}>Academy resources</a>
+          <a href="{{ url_for('admin.settings') }}" {% if request.endpoint == 'admin.settings' %}aria-current="page"{% endif %}>Company settings</a>
           <a href="{{ url_for('admin.admin_logout') }}">Logout</a>
         </nav>
       </aside>

@@ -3,48 +3,57 @@
 {% block title %}{{ course.title }} | Student Learning{% endblock %}
 
 {% block content %}
+{% macro course_lesson_links(list_class) %}
+<ul class="{{ list_class }}">
+  {% for lesson in lessons %}
+  {% set lesson_progress = progress_by_lesson.get(lesson.id) %}
+  <li class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+    <a href="{{ url_for('student.student_course_detail', slug=course.slug, lesson_id=lesson.id) }}#lesson-{{ lesson.id }}" {% if current_lesson_id == lesson.id %}aria-current="location"{% endif %} class="flex items-start justify-between gap-3 text-sm font-semibold {% if current_lesson_id == lesson.id %}text-blue-900{% else %}text-slate-800 hover:text-blue-800{% endif %}">
+      <span>{{ loop.index }}. {{ lesson.title }}</span>
+      {% if lesson_progress and lesson_progress.completed %}<i class="fa-solid fa-circle-check mt-0.5 text-emerald-700" aria-label="Completed"></i>{% endif %}
+    </a>
+    <div class="mt-1 text-xs uppercase tracking-wide text-slate-500">{{ lesson.lesson_type }}</div>
+  </li>
+  {% else %}
+  <li class="text-sm text-slate-600">No lessons have been published for this course yet.</li>
+  {% endfor %}
+</ul>
+{% endmacro %}
 <section class="py-16 bg-slate-50">
   <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+    {% set completed_count = progress_by_lesson.values()|selectattr('completed')|list|length %}
     <div class="mb-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <p class="text-sm font-semibold uppercase tracking-[0.2em] text-blue-600">Course access</p>
+          <p class="text-sm font-semibold uppercase tracking-[0.2em] text-blue-700">Your learning workspace</p>
           <h1 class="mt-2 text-3xl font-extrabold text-slate-900">{{ course.title }}</h1>
         </div>
-        <div class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">Progress: {{ '%0.0f'|format(enrolment.progress) }}%</div>
+        <div class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">{{ completed_count }} of {{ lessons|length }} lessons · {{ '%0.0f'|format(enrolment.progress) }}%</div>
+      </div>
+      <div class="mt-5 h-2 overflow-hidden rounded-full bg-slate-100" role="progressbar" aria-valuenow="{{ enrolment.progress|int }}" aria-valuemin="0" aria-valuemax="100" aria-label="Course progress">
+        <div class="h-full rounded-full bg-blue-600 transition-all" style="width: {{ enrolment.progress }}%"></div>
       </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <aside class="lg:col-span-1">
+      <aside class="lg:col-span-1 lg:sticky lg:top-24 lg:self-start">
         <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <h2 class="text-xl font-bold text-slate-900">Course content</h2>
-          <ul class="mt-5 space-y-3">
-            {% for lesson in lessons %}
-            <li class="rounded-xl border border-slate-200 bg-slate-50 p-3">
-              <a href="#lesson-{{ lesson.id }}" class="text-sm font-semibold text-slate-800 hover:text-blue-700">{{ lesson.title }}</a>
-              <div class="mt-1 text-xs uppercase tracking-wide text-slate-500">{{ lesson.lesson_type }}</div>
-              {% if progress_by_lesson.get(lesson.id) and progress_by_lesson[lesson.id].completed %}
-              <span class="mt-2 inline-flex text-xs font-semibold text-emerald-700">Completed</span>
-              {% endif %}
-            </li>
-            {% else %}
-            <li class="text-sm text-slate-600">No lessons have been published for this course yet.</li>
-            {% endfor %}
-          </ul>
+          <details class="mt-4 lg:hidden">
+            <summary class="cursor-pointer rounded-lg border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 focus-visible:outline">Browse lessons</summary>
+            {{ course_lesson_links('mt-3 space-y-2') }}
+          </details>
+          {{ course_lesson_links('mt-5 hidden space-y-3 lg:block') }}
         </div>
       </aside>
 
-      <main class="lg:col-span-2 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <main class="min-w-0 lg:col-span-2 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 class="text-2xl font-bold text-slate-900">Learning overview</h2>
-        <p class="mt-4 text-slate-600">Complete each lesson to update your course progress and unlock your certificate when eligible.</p>
-        <div class="mt-6 h-2 overflow-hidden rounded-full bg-slate-100" role="progressbar" aria-valuenow="{{ enrolment.progress|int }}" aria-valuemin="0" aria-valuemax="100" aria-label="Course progress">
-          <div class="h-full rounded-full bg-blue-600 transition-all" style="width: {{ enrolment.progress }}%"></div>
-        </div>
+        <p class="mt-4 text-slate-600">Work through the lessons below. Your completion is saved to your account as you go.</p>
         <div class="mt-6 space-y-5">
           {% for lesson in lessons %}
           {% set lesson_progress = progress_by_lesson.get(lesson.id) %}
-          <article id="lesson-{{ lesson.id }}" class="scroll-mt-24 rounded-xl border border-slate-200 p-5">
+          <article id="lesson-{{ lesson.id }}" class="scroll-mt-24 rounded-xl border p-5 {% if current_lesson_id == lesson.id %}border-blue-400 bg-blue-50/30{% else %}border-slate-200{% endif %}">
             <div class="flex flex-wrap items-center justify-between gap-3">
               <div><p class="text-xs font-semibold uppercase tracking-wider text-blue-700">Lesson {{ loop.index }}</p><h3 class="mt-1 text-lg font-bold text-slate-900">{{ lesson.title }}</h3></div>
               <span class="text-xs font-semibold {{ 'text-emerald-700' if lesson_progress and lesson_progress.completed else 'text-slate-500' }}">{{ 'Completed' if lesson_progress and lesson_progress.completed else lesson.duration_minutes ~ ' min' }}</span>
@@ -58,6 +67,10 @@
               <button type="submit" class="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">Mark lesson complete</button>
             </form>
             {% endif %}
+            <nav class="mt-5 flex flex-wrap justify-between gap-3 border-t border-slate-100 pt-4" aria-label="Lesson navigation">
+              {% if not loop.first %}<a href="{{ url_for('student.student_course_detail', slug=course.slug, lesson_id=loop.previtem.id) }}#lesson-{{ loop.previtem.id }}" class="text-sm font-semibold text-blue-800 hover:text-blue-900">&larr; Previous lesson</a>{% else %}<span></span>{% endif %}
+              {% if not loop.last %}<a href="{{ url_for('student.student_course_detail', slug=course.slug, lesson_id=loop.nextitem.id) }}#lesson-{{ loop.nextitem.id }}" class="text-sm font-semibold text-blue-800 hover:text-blue-900">Next lesson &rarr;</a>{% endif %}
+            </nav>
           </article>
           {% endfor %}
         </div>

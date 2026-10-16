@@ -1,24 +1,427 @@
+
 {% extends 'instructor/base.html' %}
+
 {% block title %}Dashboard{% endblock %}
+
 {% block content %}
-<div class="flex flex-wrap items-end justify-between gap-4">
-  <div><p class="text-xs font-bold uppercase tracking-widest text-blue-700">Instructor workspace</p><h1 class="mt-1 text-3xl font-bold text-slate-900">Dashboard</h1></div>
-  <a href="{{ url_for('instructor.course_new') }}" class="rounded-md bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-800"><i class="fa-solid fa-plus mr-2"></i>Create course</a>
+
+<div class="space-y-8">
+
+    <!-- Page heading -->
+    <section class="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
+        <div>
+            <div class="mb-3 inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5">
+                <span class="h-2 w-2 rounded-full bg-amber-500"></span>
+                <span class="text-[10px] font-extrabold uppercase tracking-[0.16em] text-brand-navy">
+                    Instructor workspace
+                </span>
+            </div>
+
+            <h1 class="text-3xl font-extrabold tracking-tight text-brand-navy sm:text-4xl">
+                Dashboard
+            </h1>
+
+            <p class="mt-2 max-w-xl text-sm leading-6 text-slate-500">
+                Manage your courses, track student engagement, and monitor your earnings from one place.
+            </p>
+        </div>
+
+        <a href="{{ url_for('instructor.course_new') }}"
+           class="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-brand-navy px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-deep">
+            <i class="fa-solid fa-plus text-xs" aria-hidden="true"></i>
+            Create a course
+        </a>
+    </section>
+
+
+    <!-- Course performance -->
+    <section aria-labelledby="course-overview-heading">
+        <div class="mb-4 flex items-center gap-3">
+            <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-brand-navy">
+                <i class="fa-solid fa-book-open" aria-hidden="true"></i>
+            </div>
+            <div>
+                <h2 id="course-overview-heading" class="text-base font-extrabold text-brand-navy">
+                    Course performance
+                </h2>
+                <p class="mt-0.5 text-xs text-slate-500">
+                    Your course portfolio and student activity
+                </p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+
+            {% for label, value, icon, accent in [
+                ('Total courses', metrics.courses, 'fa-book-open', 'navy'),
+                ('Published courses', metrics.published, 'fa-circle-check', 'green'),
+                ('Draft courses', metrics.drafts, 'fa-file-pen', 'slate'),
+                ('Awaiting review', metrics.awaiting_review, 'fa-clock', 'gold'),
+                ('Total enrollments', metrics.enrollments, 'fa-users', 'navy'),
+                ('New students · 30 days', metrics.new_students, 'fa-user-plus', 'green')
+            ] %}
+
+            <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300 hover:shadow-soft">
+                <div class="flex items-start justify-between gap-3">
+                    <div>
+                        <p class="text-xs font-bold text-slate-500">{{ label }}</p>
+                        <p class="mt-3 text-3xl font-extrabold tracking-tight text-brand-navy">
+                            {{ value }}
+                        </p>
+                    </div>
+
+                    <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl
+                        {% if accent == 'gold' %}
+                            bg-amber-50 text-amber-700
+                        {% elif accent == 'green' %}
+                            bg-emerald-50 text-emerald-700
+                        {% elif accent == 'slate' %}
+                            bg-slate-100 text-slate-600
+                        {% else %}
+                            bg-blue-50 text-brand-navy
+                        {% endif %}">
+                        <i class="fa-solid {{ icon }}" aria-hidden="true"></i>
+                    </div>
+                </div>
+            </article>
+
+            {% endfor %}
+
+        </div>
+    </section>
+
+
+    <!-- Financial overview -->
+    <section aria-labelledby="financial-overview-heading">
+        <div class="mb-4 flex items-center gap-3">
+            <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-700">
+                <i class="fa-solid fa-wallet" aria-hidden="true"></i>
+            </div>
+            <div>
+                <h2 id="financial-overview-heading" class="text-base font-extrabold text-brand-navy">
+                    Financial overview
+                </h2>
+                <p class="mt-0.5 text-xs text-slate-500">
+                    Sales, earnings, and payout status
+                </p>
+            </div>
+            <div class="ml-auto hidden sm:block">
+                <a href="{{ url_for('instructor.earnings') }}"
+                   class="inline-flex items-center gap-2 text-xs font-bold text-brand-navy transition hover:text-amber-700">
+                    View earnings
+                    <i class="fa-solid fa-arrow-right text-[10px]" aria-hidden="true"></i>
+                </a>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+
+            <!-- Gross sales -->
+            <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div class="flex items-center justify-between">
+                    <p class="text-xs font-bold text-slate-500">Gross sales</p>
+                    <i class="fa-solid fa-chart-column text-slate-400" aria-hidden="true"></i>
+                </div>
+                <p class="mt-4 break-words text-2xl font-extrabold tracking-tight text-brand-navy">
+                    ₦{{ '{:,.2f}'.format(metrics.gross_sales_kobo / 100) }}
+                </p>
+                <p class="mt-2 text-xs text-slate-500">Total recorded sales</p>
+            </article>
+
+            <!-- Instructor earnings -->
+            <article class="rounded-2xl border border-amber-200 bg-amber-50/50 p-5 shadow-sm">
+                <div class="flex items-center justify-between">
+                    <p class="text-xs font-bold text-slate-600">Instructor share</p>
+                    <i class="fa-solid fa-coins text-amber-700" aria-hidden="true"></i>
+                </div>
+                <p class="mt-4 break-words text-2xl font-extrabold tracking-tight text-brand-navy">
+                    ₦{{ '{:,.2f}'.format(metrics.earnings_kobo / 100) }}
+                </p>
+                <p class="mt-2 text-xs text-slate-500">Recorded instructor earnings</p>
+            </article>
+
+            <!-- Pending payouts -->
+            <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div class="flex items-center justify-between">
+                    <p class="text-xs font-bold text-slate-500">Pending payouts</p>
+                    <i class="fa-solid fa-hourglass-half text-amber-600" aria-hidden="true"></i>
+                </div>
+                <p class="mt-4 break-words text-2xl font-extrabold tracking-tight text-brand-navy">
+                    ₦{{ '{:,.2f}'.format(metrics.pending_payouts_kobo / 100) }}
+                </p>
+                <p class="mt-2 text-xs text-slate-500">Awaiting payout completion</p>
+            </article>
+
+            <!-- Completed payouts -->
+            <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div class="flex items-center justify-between">
+                    <p class="text-xs font-bold text-slate-500">Paid out</p>
+                    <i class="fa-solid fa-circle-check text-emerald-600" aria-hidden="true"></i>
+                </div>
+                <p class="mt-4 break-words text-2xl font-extrabold tracking-tight text-brand-navy">
+                    ₦{{ '{:,.2f}'.format(metrics.completed_payouts_kobo / 100) }}
+                </p>
+                <p class="mt-2 text-xs text-slate-500">Completed payouts</p>
+            </article>
+
+        </div>
+    </section>
+
+
+    <!-- Recent activity -->
+    <section class="grid grid-cols-1 gap-6 xl:grid-cols-2">
+
+        <!-- Recent enrollments -->
+        <div class="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div class="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-5 sm:px-6">
+                <div class="flex items-center gap-3">
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-brand-navy">
+                        <i class="fa-solid fa-user-graduate" aria-hidden="true"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-sm font-extrabold text-brand-navy">Recent enrollments</h2>
+                        <p class="mt-1 text-xs text-slate-500">Students joining your courses</p>
+                    </div>
+                </div>
+
+                <a href="{{ url_for('instructor.students') }}"
+                   class="shrink-0 text-xs font-bold text-brand-navy hover:text-amber-700">
+                    All students
+                    <i class="fa-solid fa-arrow-right ml-1 text-[10px]" aria-hidden="true"></i>
+                </a>
+            </div>
+
+            <div class="px-5 sm:px-6">
+                {% for enrollment in recent_enrollments %}
+                <div class="flex items-start gap-3 border-b border-slate-100 py-4 last:border-0">
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-extrabold text-brand-navy">
+                        {{ (enrollment.student.full_name or 'S')[:1]|upper }}
+                    </div>
+
+                    <div class="min-w-0 flex-1">
+                        <p class="truncate text-sm font-bold text-slate-800">
+                            {{ enrollment.student.full_name }}
+                        </p>
+                        <p class="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">
+                            Enrolled in {{ enrollment.course.title }}
+                        </p>
+                    </div>
+
+                    <time class="shrink-0 pt-1 text-right text-[11px] font-medium text-slate-400">
+                        {{ enrollment.created_at.strftime('%d %b %Y') }}
+                    </time>
+                </div>
+                {% else %}
+                <div class="py-12 text-center">
+                    <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50 text-slate-400">
+                        <i class="fa-solid fa-users text-lg" aria-hidden="true"></i>
+                    </div>
+                    <p class="mt-4 text-sm font-bold text-slate-700">No enrollments yet</p>
+                    <p class="mx-auto mt-1 max-w-xs text-xs leading-5 text-slate-500">
+                        Once students enroll in your courses, their activity will appear here.
+                    </p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+
+        <!-- Recent notifications -->
+        <div class="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div class="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-5 sm:px-6">
+                <div class="flex items-center gap-3">
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-700">
+                        <i class="fa-solid fa-bell" aria-hidden="true"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-sm font-extrabold text-brand-navy">Recent activity</h2>
+                        <p class="mt-1 text-xs text-slate-500">Updates from your workspace</p>
+                    </div>
+                </div>
+
+                <a href="{{ url_for('instructor.notifications') }}"
+                   class="shrink-0 text-xs font-bold text-brand-navy hover:text-amber-700">
+                    View all
+                    <i class="fa-solid fa-arrow-right ml-1 text-[10px]" aria-hidden="true"></i>
+                </a>
+            </div>
+
+            <div class="px-5 sm:px-6">
+                {% for notification in notifications %}
+                <div class="flex gap-3 border-b border-slate-100 py-4 last:border-0">
+                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-500">
+                        <i class="fa-regular fa-bell text-sm" aria-hidden="true"></i>
+                    </div>
+
+                    <div class="min-w-0 flex-1">
+                        <p class="break-words text-sm leading-6 text-slate-700">
+                            {{ notification.message }}
+                        </p>
+                        <time class="mt-1 block text-[11px] font-medium text-slate-400">
+                            {{ notification.created_at.strftime('%d %b %Y · %H:%M') }}
+                        </time>
+                    </div>
+                </div>
+                {% else %}
+                <div class="py-12 text-center">
+                    <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50 text-slate-400">
+                        <i class="fa-regular fa-bell-slash text-lg" aria-hidden="true"></i>
+                    </div>
+                    <p class="mt-4 text-sm font-bold text-slate-700">You're all caught up</p>
+                    <p class="mt-1 text-xs text-slate-500">
+                        New notifications will appear here.
+                    </p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </section>
+
+
+    <!-- Recent transactions -->
+    <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+
+        <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 px-5 py-5 sm:px-6">
+            <div class="flex items-center gap-3">
+                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
+                    <i class="fa-solid fa-arrow-right-arrow-left" aria-hidden="true"></i>
+                </div>
+                <div>
+                    <h2 class="text-sm font-extrabold text-brand-navy">Recent transactions</h2>
+                    <p class="mt-1 text-xs text-slate-500">
+                        Recent course purchases and payment activity
+                    </p>
+                </div>
+            </div>
+
+            <a href="{{ url_for('instructor.earnings') }}"
+               class="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-brand-navy transition hover:bg-slate-50">
+                Earnings overview
+                <i class="fa-solid fa-arrow-up-right-from-square text-[10px]" aria-hidden="true"></i>
+            </a>
+        </div>
+
+        {% if recent_orders %}
+        <div class="overflow-x-auto">
+            <table class="w-full min-w-[620px] text-left">
+                <thead class="bg-slate-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
+                            Transaction
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
+                            Reference
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
+                            Date
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
+                            Status
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-right text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
+                            Amount
+                        </th>
+                    </tr>
+                </thead>
+
+                <tbody class="divide-y divide-slate-100">
+                    {% for order in recent_orders %}
+                    <tr class="transition hover:bg-slate-50/80">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+                                    <i class="fa-solid fa-receipt text-sm" aria-hidden="true"></i>
+                                </div>
+                                <span class="text-sm font-bold text-slate-700">
+                                    {{ order.item_type|title }}
+                                </span>
+                            </div>
+                        </td>
+
+                        <td class="px-6 py-4">
+                            <span class="font-mono text-xs text-slate-500">
+                                {{ order.reference }}
+                            </span>
+                        </td>
+
+                        <td class="whitespace-nowrap px-6 py-4 text-xs text-slate-500">
+                            {{ order.created_at.strftime('%d %b %Y') }}
+                        </td>
+
+                        <td class="px-6 py-4">
+                            {% set order_status = order.status|lower %}
+
+                            <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-extrabold
+                                {% if order_status in ['paid', 'completed', 'successful', 'success'] %}
+                                    bg-emerald-50 text-emerald-700
+                                {% elif order_status in ['pending', 'processing'] %}
+                                    bg-amber-50 text-amber-800
+                                {% elif order_status in ['failed', 'cancelled', 'canceled', 'refunded'] %}
+                                    bg-rose-50 text-rose-700
+                                {% else %}
+                                    bg-slate-100 text-slate-600
+                                {% endif %}">
+                                <span class="h-1.5 w-1.5 rounded-full
+                                    {% if order_status in ['paid', 'completed', 'successful', 'success'] %}
+                                        bg-emerald-500
+                                    {% elif order_status in ['pending', 'processing'] %}
+                                        bg-amber-500
+                                    {% elif order_status in ['failed', 'cancelled', 'canceled', 'refunded'] %}
+                                        bg-rose-500
+                                    {% else %}
+                                        bg-slate-400
+                                    {% endif %}"></span>
+                                {{ order.status|title }}
+                            </span>
+                        </td>
+
+                        <td class="whitespace-nowrap px-6 py-4 text-right text-sm font-extrabold text-brand-navy">
+                            {{ order.currency }} {{ '{:,.2f}'.format(order.amount) }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="px-5 py-12 text-center">
+            <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50 text-slate-400">
+                <i class="fa-solid fa-receipt text-lg" aria-hidden="true"></i>
+            </div>
+            <p class="mt-4 text-sm font-bold text-slate-700">No transactions yet</p>
+            <p class="mt-1 text-xs text-slate-500">
+                Course transactions will appear here when available.
+            </p>
+        </div>
+        {% endif %}
+
+    </section>
+
+
+    <!-- Notifications summary -->
+    <section class="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <div class="flex items-center gap-4">
+            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-navy text-white">
+                <i class="fa-solid fa-bell" aria-hidden="true"></i>
+            </div>
+            <div>
+                <p class="text-sm font-extrabold text-brand-navy">Stay on top of your workspace</p>
+                <p class="mt-1 text-xs leading-5 text-slate-500">
+                    You have
+                    <span class="font-extrabold text-brand-navy">{{ metrics.unread_notifications }}</span>
+                    unread notification(s).
+                </p>
+            </div>
+        </div>
+
+        <a href="{{ url_for('instructor.notifications') }}"
+           class="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-brand-navy transition hover:border-amber-300 hover:bg-amber-50">
+            Open notifications
+            <i class="fa-solid fa-arrow-right text-[10px]" aria-hidden="true"></i>
+        </a>
+    </section>
+
 </div>
-<div class="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-  {% for label, value in [('Courses',metrics.courses),('Published',metrics.published),('Drafts',metrics.drafts),('Awaiting review',metrics.awaiting_review),('Enrollments',metrics.enrollments),('New in 30 days',metrics.new_students),('Gross sales', '₦%.2f'|format(metrics.gross_sales_kobo / 100)),('Instructor share', '₦%.2f'|format(metrics.earnings_kobo / 100)),('Pending payouts','₦%.2f'|format(metrics.pending_payouts_kobo / 100)),('Paid out','₦%.2f'|format(metrics.completed_payouts_kobo / 100)),('Unread notifications',metrics.unread_notifications)] %}
-  <div class="rounded-md border border-slate-200 bg-white p-4"><p class="text-xs font-semibold uppercase text-slate-500">{{ label }}</p><p class="mt-2 text-2xl font-bold text-slate-900">{{ value }}</p></div>
-  {% endfor %}
-</div>
-<div class="mt-8 grid gap-6 xl:grid-cols-2">
-  <section class="rounded-md border border-slate-200 bg-white p-5"><div class="flex items-center justify-between"><h2 class="text-lg font-bold">Recent enrollments</h2><a class="text-sm font-semibold text-blue-700" href="{{ url_for('instructor.students') }}">All students</a></div>
-    {% for enrollment in recent_enrollments %}<div class="mt-4 flex justify-between gap-3 border-t border-slate-100 pt-3 text-sm"><span>{{ enrollment.student.full_name }} <span class="text-slate-500">· {{ enrollment.course.title }}</span></span><span class="text-slate-500">{{ enrollment.created_at.strftime('%d %b %Y') }}</span></div>{% else %}<p class="mt-4 text-sm text-slate-500">No enrollments yet. Published courses will appear here as students join.</p>{% endfor %}
-  </section>
-  <section class="rounded-md border border-slate-200 bg-white p-5"><div class="flex items-center justify-between"><h2 class="text-lg font-bold">Recent activity</h2><a class="text-sm font-semibold text-blue-700" href="{{ url_for('instructor.notifications') }}">Notifications</a></div>
-    {% for notification in notifications %}<div class="mt-4 border-t border-slate-100 pt-3 text-sm"><p>{{ notification.message }}</p><p class="mt-1 text-xs text-slate-500">{{ notification.created_at.strftime('%d %b %Y %H:%M') }}</p></div>{% else %}<p class="mt-4 text-sm text-slate-500">No notifications yet.</p>{% endfor %}
-  </section>
-  <section class="rounded-md border border-slate-200 bg-white p-5 xl:col-span-2"><div class="flex items-center justify-between"><h2 class="text-lg font-bold">Recent transactions</h2><a class="text-sm font-semibold text-blue-700" href="{{ url_for('instructor.earnings') }}">Earnings</a></div>
-    {% for order in recent_orders %}<div class="mt-4 flex flex-wrap justify-between gap-3 border-t border-slate-100 pt-3 text-sm"><span>{{ order.item_type|title }} · {{ order.reference }} · {{ order.status|title }}</span><span>{{ order.currency }} {{ '%.2f'|format(order.amount) }} · {{ order.created_at.strftime('%d %b %Y') }}</span></div>{% else %}<p class="mt-4 text-sm text-slate-500">No course transactions yet.</p>{% endfor %}
-  </section>
-</div>
+
 {% endblock %}

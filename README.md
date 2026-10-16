@@ -125,5 +125,5 @@ flask run --host 0.0.0.0 --port 8000
 
 ## Known gaps
 
-- Contact details such as the office address and Instagram handle require final verification before publication by the company.
+- The office address is configured in Company Settings; verify the Instagram handle before publication.
 - The website is structured for production deployment but still needs live SMTP credentials and a final domain configuration before full production email delivery and search indexing are fully activated.

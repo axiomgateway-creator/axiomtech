@@ -1,0 +1,35 @@
+:root {
+  --axiom-navy: #09294b;
+  --axiom-gold: #c9a227;
+  --axiom-gold-dark: #806313;
+  --axiom-surface: #f5f7fa;
+  --axiom-text: #172033;
+  --axiom-muted: #64748b;
+}
+
+body {
+  font-family: "DM Sans", sans-serif;
+  color: var(--axiom-text);
+}
+
+h1,
+h2 {
+  font-family: "DM Serif Display", serif;
+  font-weight: 400;
+}
+
+:focus-visible {
+  outline: 3px solid var(--axiom-gold);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
